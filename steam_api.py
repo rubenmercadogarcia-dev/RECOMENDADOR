@@ -20,6 +20,8 @@ def _get(url, params=None, intentos=3):
         if r.status_code == 429:
             time.sleep(5 * (i + 1))
             continue
+        if r.status_code in (401, 403) and url.startswith(API):
+            raise ErrorSteam("Steam rechaza la API key (¿está bien copiada, completa y sin espacios?).")
         r.raise_for_status()
         return r.json()
     raise ErrorSteam("Steam está limitando las peticiones. Prueba en unos minutos.")
@@ -39,7 +41,8 @@ def resolver_steamid(key: str, texto: str) -> str:
     datos = _get(f"{API}/ISteamUser/ResolveVanityURL/v1/",
                  {"key": key, "vanityurl": nombre})["response"]
     if datos.get("success") != 1:
-        raise ErrorSteam(f"No encuentro el perfil '{nombre}'.")
+        raise ErrorSteam(f"No encuentro ningún perfil con la dirección /id/{nombre}. "
+                         "Ese nombre no siempre es tu usuario de inicio de sesión.")
     return datos["steamid"]
 
 

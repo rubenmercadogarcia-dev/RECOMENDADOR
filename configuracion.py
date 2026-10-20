@@ -44,8 +44,17 @@ def asistente_inicial(resolver_steamid) -> dict:
 
     print("\n2) Tu perfil de Steam tiene que ser PÚBLICO, incluidos los")
     print("   'Detalles de juego' (Perfil > Editar perfil > Privacidad).")
-    texto = input("Pega la URL de tu perfil de Steam o tu SteamID64: ").strip()
-    steamid = resolver_steamid(steam_key, texto)
+    while True:
+        texto = input("Pega la URL de tu perfil de Steam o tu SteamID64: ").strip()
+        try:
+            steamid = resolver_steamid(steam_key, texto)
+            break
+        except Exception as e:
+            print(f"   [!] {e}")
+            if "API key" in str(e):
+                steam_key = input("   Vuelve a pegar tu API key de Steam: ").strip()
+            else:
+                print("   Prueba con la URL completa de tu perfil (cópiala del navegador).")
     print(f"   SteamID encontrado: {steamid}")
 
     print("\n3) (Opcional) API key de Anthropic para el modo IA.")
