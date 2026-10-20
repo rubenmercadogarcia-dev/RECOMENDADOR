@@ -1,2 +1,65 @@
 # RECOMENDADOR
-Programa queinterpreta tus metadatos de Steam y te recomienda juegos en base a esos metadatos y a preguntas.
+
+Recomendador de videojuegos a partir de tu biblioteca de Steam. Mira qué juegos te han enganchado (por las horas jugadas), cuáles abandonaste, te hace unas preguntas sobre lo que te apetece y te recomienda juegos que **no tienes**, explicando el porqué.
+
+> 🚧 **Estado: borrador (v0.1).** Funciona en la terminal. Próximo objetivo: un `.exe` para Windows en *Releases*.
+
+## Qué hace
+
+1. **Sincroniza** tu biblioteca de Steam: juegos y horas jugadas.
+2. **Crea tu perfil**: lo que más te engancha, lo que dejaste y tus etiquetas fuertes (Roguelite, Metroidvania…).
+3. **Te pregunta** para afinar: duración, solo o cooperativo, dificultad, presupuesto, qué evitar…
+4. **Recomienda** de dos maneras:
+   - **Modo normal (gratis):** busca juegos que comparten etiquetas con tus favoritos y los puntúa según tus gustos y sus reseñas.
+   - **Modo IA (opcional):** Claude propone juegos, y el programa comprueba en la tienda que existen y que no los tienes.
+5. Si una recomendación no te interesa, la **descartas** y no vuelve a salir.
+
+## Requisitos
+
+- Python 3.10 o superior
+- Una **API key de Steam** (gratis): https://steamcommunity.com/dev/apikey
+- Tu **perfil de Steam público**, incluidos los *Detalles de juego* (Perfil → Editar perfil → Privacidad)
+- *(Opcional)* Una API key de Anthropic para el modo IA
+
+## Instalación y uso
+
+```bash
+git clone https://github.com/<tu-usuario>/RECOMENDADOR.git
+cd RECOMENDADOR
+pip install -r requirements.txt
+python main.py
+```
+
+La primera vez te pide las claves y sincroniza tu biblioteca. Las claves y la base de datos se guardan **fuera del proyecto**:
+
+- Windows: `%APPDATA%\Recomendador\`
+- Linux/macOS: `~/.recomendador/`
+
+## Estructura
+
+| Archivo | Qué hace |
+|---|---|
+| `main.py` | Menú principal |
+| `configuracion.py` | Claves del usuario y carpeta de datos |
+| `steam_api.py` | Conexión con Steam (biblioteca, tienda) y SteamSpy (etiquetas) |
+| `base_datos.py` | Base de datos SQLite |
+| `sincronizar.py` | Descarga la biblioteca y las etiquetas |
+| `perfil.py` | Calcula tus gustos a partir de las horas |
+| `preguntas.py` | Preguntas para afinar |
+| `recomendador.py` | Modo normal |
+| `recomendador_ia.py` | Modo IA |
+| `tests/` | Pruebas con datos simulados: `python tests/test_borrador.py` |
+
+## Fuentes de datos
+
+- [Steam Web API](https://steamcommunity.com/dev): biblioteca y horas (necesita API key).
+- Tienda de Steam (`appdetails`, `storesearch`): géneros, precios y búsqueda (sin clave).
+- [SteamSpy](https://steamspy.com/api.php): etiquetas de la comunidad (sin clave). Parece poco mantenido; si falla, el programa usa los géneros de la tienda.
+
+## Hoja de ruta
+
+- [x] v0.1 – Borrador en terminal
+- [ ] Probar con bibliotecas reales y ajustar las puntuaciones
+- [ ] Empaquetar como `.exe` con PyInstaller y publicarlo en *Releases*
+- [ ] Interfaz gráfica sencilla
+- [ ] Página web de presentación con botón de descarga
