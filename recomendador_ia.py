@@ -8,7 +8,7 @@ import requests
 
 import base_datos as bd
 import steam_api
-from sincronizar import PAUSA
+from sincronizar import PAUSA, avisar_por_terminal
 
 MODELO = "claude-sonnet-5-5"
 URL_API = "https://api.anthropic.com/v1/messages"
@@ -60,12 +60,12 @@ def _normalizar(texto: str) -> str:
     return re.sub(r"[^a-z0-9]", "", texto.lower())
 
 
-def recomendar(con, perfil: dict, api_key: str, n: int = 8) -> list[dict]:
-    print("Pidiendo ideas a Claude...")
+def recomendar(con, perfil: dict, api_key: str, n: int = 8, avisar=avisar_por_terminal) -> list[dict]:
+    avisar("Pidiendo ideas a Claude...")
     ideas = _pedir_a_claude(api_key, _resumen(con, perfil), n)
     poseidos = bd.appids_poseidos(con)
     vetados = bd.descartados(con)
-    print("Comprobando en la tienda de Steam...")
+    avisar("Comprobando en la tienda de Steam...")
     resultado = []
     for idea in ideas:
         if len(resultado) >= n:

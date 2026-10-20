@@ -2,7 +2,7 @@
 
 Recomendador de videojuegos a partir de tu biblioteca de Steam. Mira qué juegos te han enganchado (por las horas jugadas), cuáles abandonaste, te hace unas preguntas sobre lo que te apetece y te recomienda juegos que **no tienes**, explicando el porqué.
 
-> 🚧 **Estado: borrador (v0.1).** Funciona en la terminal. Próximo objetivo: un `.exe` para Windows en *Releases*.
+> 🚧 **Estado: v0.2 en desarrollo.** Interfaz gráfica oscura (`app.py`) y versión de terminal (`main.py`). Próximo objetivo: un `.exe` para Windows en *Releases*.
 
 ## Qué hace
 
@@ -24,11 +24,14 @@ Recomendador de videojuegos a partir de tu biblioteca de Steam. Mira qué juegos
 ## Instalación y uso
 
 ```bash
-git clone https://github.com/<tu-usuario>/RECOMENDADOR.git
+git clone https://github.com/rubenmercadogarcia-dev/RECOMENDADOR.git
 cd RECOMENDADOR
-pip install -r requirements.txt
-python main.py
+py -m pip install -r requirements.txt
+py app.py        # ventana con interfaz
+py main.py       # versión de terminal
 ```
+
+En Windows, la ventana usa Microsoft Edge WebView2, que ya viene con Windows 10 y 11.
 
 La primera vez te pide las claves y sincroniza tu biblioteca. Las claves y la base de datos se guardan **fuera del proyecto**:
 
@@ -39,7 +42,9 @@ La primera vez te pide las claves y sincroniza tu biblioteca. Las claves y la ba
 
 | Archivo | Qué hace |
 |---|---|
-| `main.py` | Menú principal |
+| `app.py` | Interfaz gráfica: abre la ventana y hace de puente con JavaScript |
+| `ui/` | La interfaz: `index.html`, `estilo.css` y `app.js` |
+| `main.py` | Versión de terminal |
 | `configuracion.py` | Claves del usuario y carpeta de datos |
 | `steam_api.py` | Conexión con Steam (biblioteca, tienda) y SteamSpy (etiquetas) |
 | `base_datos.py` | Base de datos SQLite |
@@ -48,7 +53,7 @@ La primera vez te pide las claves y sincroniza tu biblioteca. Las claves y la ba
 | `preguntas.py` | Preguntas para afinar |
 | `recomendador.py` | Modo normal |
 | `recomendador_ia.py` | Modo IA |
-| `tests/` | Pruebas con datos simulados: `python tests/test_borrador.py` |
+| `tests/` | Pruebas con datos simulados: `py tests/test_borrador.py` y `py tests/test_app.py` |
 
 ## Fuentes de datos
 
@@ -59,7 +64,7 @@ La primera vez te pide las claves y sincroniza tu biblioteca. Las claves y la ba
 ## Hoja de ruta
 
 - [x] v0.1 – Borrador en terminal
+- [x] v0.2 – Interfaz gráfica sobria y oscura
 - [ ] Probar con bibliotecas reales y ajustar las puntuaciones
 - [ ] Empaquetar como `.exe` con PyInstaller y publicarlo en *Releases*
-- [ ] Interfaz gráfica sencilla
 - [ ] Página web de presentación con botón de descarga

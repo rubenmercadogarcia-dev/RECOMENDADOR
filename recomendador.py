@@ -4,7 +4,7 @@ import time
 import base_datos as bd
 import steam_api
 from perfil import GENERICAS
-from sincronizar import PAUSA, etiquetas_de_juego
+from sincronizar import PAUSA, avisar_por_terminal, etiquetas_de_juego
 
 ETIQUETAS_A_EXPLORAR = 6     # cuántas de tus etiquetas fuertes usamos para buscar
 PRESELECCION = 30            # candidatos que analizamos a fondo
@@ -50,7 +50,7 @@ def _parecido_a(con, etiquetas: dict, favoritos) -> tuple[str, list[str]]:
     return mejor, comunes
 
 
-def recomendar(con, perfil: dict, n: int = 10) -> list[dict]:
+def recomendar(con, perfil: dict, n: int = 10, avisar=avisar_por_terminal) -> list[dict]:
     poseidos = bd.appids_poseidos(con)
     vetados = bd.descartados(con)
     prefs = bd.preferencias(con)
@@ -58,11 +58,11 @@ def recomendar(con, perfil: dict, n: int = 10) -> list[dict]:
     pesos = dict(perfil["etiquetas"])
     fuertes = [e for e, _ in perfil["etiquetas"] if e not in GENERICAS][:ETIQUETAS_A_EXPLORAR]
     if not fuertes:
-        print("Aún no tengo etiquetas tuyas. Sincroniza primero (opción 1).")
+        avisar("Aún no tengo etiquetas tuyas. Sincroniza primero con Steam.")
         return []
 
     # 1) Candidatos: juegos que comparten tus etiquetas fuertes
-    print(f"Buscando juegos con: {', '.join(fuertes)}...")
+    avisar(f"Buscando juegos con: {', '.join(fuertes)}...")
     candidatos = {}
     for etiqueta in fuertes:
         for appid_txt, d in steam_api.juegos_por_etiqueta(etiqueta).items():
@@ -75,16 +75,17 @@ def recomendar(con, perfil: dict, n: int = 10) -> list[dict]:
             c["coinciden"].add(etiqueta)
         time.sleep(PAUSA)
     if not candidatos:
-        print("No he encontrado candidatos (¿SteamSpy no responde?). Prueba el modo IA.")
+        avisar("No he encontrado candidatos (¿SteamSpy no responde?). Prueba el modo IA.")
         return []
 
     # 2) Preselección rápida y análisis a fondo de los mejores
     preseleccion = sorted(candidatos.items(),
                           key=lambda kv: (len(kv[1]["coinciden"]), kv[1]["calidad"]),
                           reverse=True)[:PRESELECCION]
-    print(f"Analizando {len(preseleccion)} candidatos...")
+    avisar(f"Analizando {len(preseleccion)} candidatos...")
     puntuados = []
-    for appid, c in preseleccion:
+    for i, (appid, c) in enumerate(preseleccion, 1):
+        avisar(c["nombre"], i, len(preseleccion))
         etiquetas = _etiquetas_cacheadas(con, appid)
         if any(e.lower() in evitar for e in etiquetas):
             continue

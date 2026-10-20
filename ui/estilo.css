@@ -1,0 +1,205 @@
+/* RECOMENDADOR · diseño sobrio y oscuro */
+:root {
+  --fondo: #0e0f12;
+  --panel: #15171b;
+  --panel-alto: #1b1e23;
+  --borde: #272a30;
+  --borde-fuerte: #353941;
+  --texto: #e6e7e9;
+  --suave: #9a9fa8;
+  --tenue: #686d76;
+  --acento: #c4a466;
+  --acento-texto: #16130c;
+  --peligro: #d0796d;
+  --radio: 8px;
+  --fuente: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--fondo);
+  color: var(--texto);
+  font: 14px/1.5 var(--fuente);
+  -webkit-font-smoothing: antialiased;
+}
+[hidden] { display: none !important; }
+h1, h2, p { margin: 0; }
+h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+h2 {
+  font-size: 12px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--suave); margin: 32px 0 14px;
+}
+a { color: var(--acento); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code { background: var(--panel-alto); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+.suave { color: var(--suave); }
+.marca {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.24em; color: var(--acento);
+}
+
+/* ---------- Botones ---------- */
+.boton {
+  font: inherit; font-weight: 600; font-size: 13px;
+  border-radius: 6px; padding: 9px 16px; cursor: pointer;
+  border: 1px solid transparent; transition: background .15s, border-color .15s, opacity .15s;
+}
+.boton:disabled { opacity: .45; cursor: default; }
+.boton.primario { background: var(--acento); color: var(--acento-texto); }
+.boton.primario:hover:not(:disabled) { background: #d2b479; }
+.boton.secundario { background: var(--panel-alto); color: var(--texto); border-color: var(--borde-fuerte); }
+.boton.secundario:hover:not(:disabled) { border-color: var(--tenue); }
+.boton.fantasma { background: transparent; color: var(--suave); border-color: var(--borde); }
+.boton.fantasma:hover:not(:disabled) { color: var(--texto); border-color: var(--borde-fuerte); }
+.boton.pequeno { padding: 6px 11px; font-size: 12px; }
+.boton.ancho { width: 100%; }
+:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+
+/* ---------- Pantalla inicial ---------- */
+.inicio { min-height: 100%; display: grid; place-items: center; padding: 32px 16px; }
+.inicio-tarjeta {
+  width: min(460px, 100%); background: var(--panel);
+  border: 1px solid var(--borde); border-radius: 12px; padding: 32px;
+}
+.inicio-tarjeta h1 { margin: 14px 0 6px; }
+
+/* ---------- Formularios ---------- */
+.formulario { display: grid; gap: 18px; margin-top: 24px; }
+.formulario.estrecho { max-width: 460px; }
+.formulario label { display: grid; gap: 6px; }
+.formulario label > span { font-weight: 600; font-size: 13px; }
+.formulario em { color: var(--tenue); font-style: normal; font-weight: 400; }
+.formulario small { color: var(--tenue); font-size: 12px; }
+input[type="text"], input[type="password"], input:not([type]) {
+  font: inherit; color: var(--texto); background: var(--fondo);
+  border: 1px solid var(--borde-fuerte); border-radius: 6px; padding: 9px 11px; width: 100%;
+}
+input::placeholder { color: var(--tenue); }
+input:focus { outline: none; border-color: var(--acento); }
+.error {
+  color: var(--peligro); font-size: 13px; background: rgba(208, 121, 109, .08);
+  border: 1px solid rgba(208, 121, 109, .25); border-radius: 6px; padding: 9px 11px;
+}
+.fila-botones { display: flex; gap: 10px; }
+
+/* ---------- Estructura ---------- */
+.aplicacion { display: grid; grid-template-columns: 220px 1fr; height: 100%; }
+.lateral {
+  background: var(--panel); border-right: 1px solid var(--borde);
+  display: flex; flex-direction: column; padding: 24px 14px 18px;
+}
+.lateral .marca { padding: 0 10px 24px; }
+.menu { display: grid; gap: 2px; }
+.menu-item {
+  font: inherit; text-align: left; color: var(--suave); background: none; border: 0;
+  padding: 9px 10px; border-radius: 6px; cursor: pointer; position: relative;
+}
+.menu-item:hover { color: var(--texto); background: var(--panel-alto); }
+.menu-item.activo { color: var(--texto); background: var(--panel-alto); }
+.menu-item.activo::before {
+  content: ""; position: absolute; left: -14px; top: 8px; bottom: 8px; width: 2px; background: var(--acento);
+}
+.lateral-pie { margin-top: auto; display: grid; gap: 12px; }
+.estado-tarea p { font-size: 12px; color: var(--suave); margin-bottom: 6px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.contenido { overflow-y: auto; padding: 36px 40px 56px; }
+.vista { max-width: 1120px; }
+.cabecera { margin-bottom: 8px; }
+.cabecera .suave { margin-top: 4px; }
+.cabecera.fila { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+.acciones { display: flex; gap: 10px; align-items: center; }
+
+/* ---------- Barra de progreso ---------- */
+.barra { height: 3px; background: var(--borde); border-radius: 2px; overflow: hidden; }
+.barra > div { height: 100%; width: 0; background: var(--acento); transition: width .3s; }
+.barra.indeterminada > div { width: 30%; animation: deslizar 1.2s ease-in-out infinite; }
+@keyframes deslizar { from { transform: translateX(-100%); } to { transform: translateX(340%); } }
+.progreso { margin-top: 24px; }
+.progreso p { color: var(--suave); font-size: 13px; margin-bottom: 8px; }
+
+/* ---------- Cifras ---------- */
+.cifras { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 24px; }
+.cifra { background: var(--panel); border: 1px solid var(--borde); border-radius: var(--radio); padding: 16px 18px; }
+.cifra strong { display: block; font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.cifra span { color: var(--suave); font-size: 12px; }
+
+/* ---------- Tarjetas de juego ---------- */
+.rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
+.rejilla.grande { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); margin-top: 24px; gap: 16px; }
+.tarjeta {
+  background: var(--panel); border: 1px solid var(--borde); border-radius: var(--radio);
+  overflow: hidden; display: flex; flex-direction: column;
+  transition: border-color .15s, opacity .25s, transform .25s;
+}
+.tarjeta:hover { border-color: var(--borde-fuerte); }
+.tarjeta.saliendo { opacity: 0; transform: scale(.97); }
+.portada { aspect-ratio: 460 / 215; background: var(--panel-alto); display: block; width: 100%; object-fit: cover; }
+.portada.sin-imagen { display: grid; place-items: center; color: var(--tenue); font-weight: 600; letter-spacing: .1em; }
+.tarjeta-cuerpo { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.tarjeta-titulo { font-weight: 600; line-height: 1.3; }
+.tarjeta-meta { color: var(--suave); font-size: 12px; font-variant-numeric: tabular-nums; }
+.tarjeta-motivo { color: var(--suave); font-size: 13px; margin-top: 6px; flex: 1; }
+.tarjeta-acciones { display: flex; gap: 8px; margin-top: 12px; }
+
+/* ---------- Etiquetas ---------- */
+.dos-columnas { display: grid; grid-template-columns: 3fr 2fr; gap: 40px; }
+.etiquetas { display: grid; gap: 9px; }
+.etiqueta { display: grid; grid-template-columns: 170px 1fr; align-items: center; gap: 12px; font-size: 13px; }
+.etiqueta span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.etiqueta .barra { height: 5px; }
+.lista { list-style: none; padding: 0; margin: 0; display: grid; gap: 1px;
+  background: var(--borde); border: 1px solid var(--borde); border-radius: var(--radio); overflow: hidden; }
+.lista li { background: var(--panel); padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.lista li .suave { font-size: 12px; font-variant-numeric: tabular-nums; }
+.lista:empty { display: none; }
+.lista-vacia { color: var(--tenue); font-size: 13px; }
+
+/* ---------- Selector Normal / IA ---------- */
+.selector { display: inline-flex; background: var(--panel); border: 1px solid var(--borde); border-radius: 7px; padding: 3px; }
+.selector-opcion {
+  font: inherit; font-size: 13px; color: var(--suave); background: none; border: 0;
+  padding: 6px 14px; border-radius: 5px; cursor: pointer;
+}
+.selector-opcion.activo { background: var(--panel-alto); color: var(--texto); box-shadow: inset 0 0 0 1px var(--borde-fuerte); }
+.selector-opcion:disabled { opacity: .4; cursor: default; }
+
+/* ---------- Preguntas ---------- */
+.preguntas { display: grid; gap: 14px; margin-top: 24px; max-width: 720px; }
+.pregunta { background: var(--panel); border: 1px solid var(--borde); border-radius: var(--radio); padding: 16px 18px; }
+.pregunta > p { font-weight: 600; margin-bottom: 12px; }
+.opciones { display: flex; flex-wrap: wrap; gap: 8px; }
+.opcion {
+  font: inherit; font-size: 13px; color: var(--suave); background: var(--fondo);
+  border: 1px solid var(--borde-fuerte); border-radius: 999px; padding: 6px 14px; cursor: pointer;
+}
+.opcion:hover { color: var(--texto); }
+.pregunta .ayuda { display: block; margin-top: 8px; font-size: 12px; color: var(--tenue); }
+.opcion.activo { color: var(--acento); border-color: var(--acento); background: rgba(196, 164, 102, .08); }
+
+/* ---------- Estados vacíos y aviso ---------- */
+.vacio { margin-top: 28px; padding: 40px 24px; text-align: center; border: 1px dashed var(--borde-fuerte); border-radius: var(--radio); }
+.vacio p + p { margin-top: 4px; font-size: 13px; }
+.aviso {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: var(--panel-alto); border: 1px solid var(--borde-fuerte); color: var(--texto);
+  padding: 10px 18px; border-radius: 8px; font-size: 13px; box-shadow: 0 8px 24px rgba(0, 0, 0, .4);
+}
+.aviso.error { border-color: rgba(208, 121, 109, .5); color: var(--peligro); }
+
+/* ---------- Ventanas estrechas ---------- */
+@media (max-width: 1100px) {
+  .cifras { grid-template-columns: repeat(2, 1fr); }
+  .dos-columnas { grid-template-columns: 1fr; gap: 0; }
+}
+@media (max-width: 760px) {
+  .aplicacion { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  .lateral { border-right: 0; border-bottom: 1px solid var(--borde); padding: 14px 16px; }
+  .lateral .marca { padding: 0 0 10px; }
+  .menu { grid-auto-flow: column; overflow-x: auto; }
+  .menu-item.activo::before { display: none; }
+  .lateral-pie { margin-top: 12px; }
+  .contenido { padding: 24px 16px 40px; }
+  .etiqueta { grid-template-columns: 120px 1fr; }
+}
