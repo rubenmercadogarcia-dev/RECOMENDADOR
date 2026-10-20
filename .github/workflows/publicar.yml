@@ -1,0 +1,58 @@
+# Construye RECOMENDADOR.exe en Windows y lo publica en Releases.
+#
+# Para publicar una versión nueva: crea una etiqueta que empiece por "v"
+# (por ejemplo v1.0.0) y súbela a GitHub. También se puede lanzar a mano
+# desde la pestaña Actions (en ese caso solo construye el .exe, sin publicarlo).
+name: Publicar versión (.exe)
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write                # para crear la release
+
+jobs:
+  exe:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt pyinstaller
+
+      - name: Construir RECOMENDADOR.exe
+        run: >
+          pyinstaller --noconfirm --onefile --windowed --name RECOMENDADOR
+          --add-data "ui;ui" --add-data "datos;datos"
+          app.py
+
+      - name: Comprobar que el .exe arranca
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath "dist\RECOMENDADOR.exe" -ArgumentList "--comprobar" -Wait -PassThru
+          if ($p.ExitCode -ne 0) {
+            Get-Content "$env:TEMP\recomendador_comprobar.txt" -ErrorAction SilentlyContinue
+            throw "El .exe no arranca bien (código $($p.ExitCode))"
+          }
+          "Tamaño: {0:N1} MB" -f ((Get-Item dist\RECOMENDADOR.exe).Length / 1MB)
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RECOMENDADOR
+          path: dist/RECOMENDADOR.exe
+
+      - name: Publicar en Releases
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          gh release create "$env:GITHUB_REF_NAME" "dist/RECOMENDADOR.exe"
+          --title "RECOMENDADOR $env:GITHUB_REF_NAME"
+          --notes-file ".github/notas_release.md"

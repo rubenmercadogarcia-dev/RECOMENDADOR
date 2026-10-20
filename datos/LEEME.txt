@@ -1,0 +1,3 @@
+Aquí guarda GitHub Actions el catálogo de juegos (catalogo.json.gz) y el
+registro de cómo se generó (catalogo_registro.txt). No lo edites a mano:
+se regenera solo el día 1 de cada mes (ver .github/workflows/catalogo.yml).

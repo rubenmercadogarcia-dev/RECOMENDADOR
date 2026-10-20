@@ -440,7 +440,30 @@ class Api:
         return {"ok": False, "error": "Dirección no permitida."}
 
 
+def comprobar() -> int:
+    """Arranque de prueba sin abrir la ventana (lo usa GitHub al construir el .exe).
+    Devuelve 0 si todo lo necesario está dentro; si no, deja el error en un archivo."""
+    import tempfile
+    try:
+        import webview  # noqa: F401
+        if sys.platform == "win32":
+            from webview.platforms import winforms  # noqa: F401  (carga .NET y WebView2)
+        for archivo in ("ui/index.html", "ui/estilo.css", "ui/app.js"):
+            if not ruta_recurso(archivo).exists():
+                raise FileNotFoundError(archivo)
+        api = Api()
+        api.estado()
+        api.preguntas()
+        mod_catalogo.estado()
+        return 0
+    except Exception:
+        (Path(tempfile.gettempdir()) / "recomendador_comprobar.txt").write_text(traceback.format_exc(), encoding="utf-8")
+        return 1
+
+
 def main():
+    if "--comprobar" in sys.argv:
+        sys.exit(comprobar())
     import webview  # solo hace falta al abrir la ventana
 
     # Comprueba en segundo plano si hay un catálogo nuevo (como mucho una vez a la semana)
