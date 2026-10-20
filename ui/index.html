@@ -7,42 +7,18 @@
   <link rel="stylesheet" href="estilo.css">
 </head>
 <body>
-  <!-- Configuración inicial (solo la primera vez) -->
-  <section id="pantalla-inicio" class="inicio" hidden>
-    <div class="inicio-tarjeta">
-      <p class="marca">RECOMENDADOR</p>
-      <h1>Conecta tu cuenta de Steam</h1>
-      <p class="suave">Tus claves se guardan solo en este ordenador.</p>
-      <form id="form-inicio" class="formulario" autocomplete="off">
-        <label>
-          <span>API key de Steam</span>
-          <input name="steam_key" type="password" required spellcheck="false">
-          <small>Consíguela gratis en <a href="#" data-url="https://steamcommunity.com/dev/apikey">steamcommunity.com/dev/apikey</a>. En «Domain name» pon <code>localhost</code>.</small>
-        </label>
-        <label>
-          <span>Tu perfil de Steam</span>
-          <input name="perfil" required spellcheck="false" placeholder="URL del perfil, nombre o SteamID64">
-          <small>El perfil y los «Detalles de juego» deben ser públicos.</small>
-        </label>
-        <label>
-          <span>API key de Anthropic <em>(opcional)</em></span>
-          <input name="anthropic_key" type="password" spellcheck="false">
-          <small>Solo para el modo IA. Sin ella, el modo normal funciona igual y es gratis.</small>
-        </label>
-        <p class="error" id="error-inicio" hidden></p>
-        <button class="boton primario" type="submit">Conectar y sincronizar</button>
-      </form>
-    </div>
-  </section>
-
-  <!-- Aplicación -->
-  <div id="aplicacion" class="aplicacion" hidden>
+  <div id="aplicacion" class="aplicacion">
     <aside class="lateral">
       <p class="marca">RECOMENDADOR</p>
       <nav class="menu">
         <button class="menu-item activo" data-vista="perfil">Perfil</button>
+        <p class="menu-grupo">Biblioteca</p>
+        <button class="menu-item" data-vista="steam">Steam</button>
+        <button class="menu-item" data-vista="manual">Manual</button>
+        <p class="menu-grupo">Descubrir</p>
         <button class="menu-item" data-vista="recomendaciones">Recomendaciones</button>
         <button class="menu-item" data-vista="preguntas">Preguntas</button>
+        <p class="menu-grupo"></p>
         <button class="menu-item" data-vista="ajustes">Ajustes</button>
       </nav>
       <div class="lateral-pie">
@@ -50,7 +26,6 @@
           <p id="estado-mensaje"></p>
           <div class="barra"><div id="estado-barra"></div></div>
         </div>
-        <button id="boton-sincronizar" class="boton secundario ancho">Sincronizar con Steam</button>
       </div>
     </aside>
 
@@ -59,14 +34,19 @@
       <section class="vista" id="vista-perfil">
         <header class="cabecera">
           <h1>Tu perfil</h1>
-          <p class="suave">Calculado a partir de las horas que has jugado.</p>
+          <p class="suave">Calculado con tus notas y, si un juego no tiene nota, con las horas jugadas.</p>
         </header>
-        <div id="perfil-vacio" class="vacio" hidden>
-          <p>Todavía no hay datos. Sincroniza tu biblioteca para empezar.</p>
+        <div id="perfil-vacio" class="vacio bienvenida" hidden>
+          <p class="vacio-titulo">Empieza por tu biblioteca</p>
+          <p class="suave">Conecta Steam para importar tus juegos automáticamente, o añádelos y puntúalos a mano. Puedes usar las dos.</p>
+          <div class="fila-botones centrado">
+            <button class="boton primario" data-ir="steam">Conectar Steam</button>
+            <button class="boton secundario" data-ir="manual">Añadir juegos a mano</button>
+          </div>
         </div>
         <div id="perfil-datos">
           <div class="cifras" id="perfil-cifras"></div>
-          <h2>Lo que más te engancha</h2>
+          <h2>Lo que más te gusta</h2>
           <div class="rejilla" id="perfil-favoritos"></div>
           <div class="dos-columnas">
             <div>
@@ -81,19 +61,80 @@
         </div>
       </section>
 
+      <!-- Biblioteca de Steam -->
+      <section class="vista" id="vista-steam" hidden>
+        <header class="cabecera fila">
+          <div>
+            <h1>Biblioteca de Steam</h1>
+            <p class="suave" id="steam-subtitulo">Tus juegos y horas, importados de tu cuenta.</p>
+          </div>
+          <div class="acciones" id="steam-acciones" hidden>
+            <input id="steam-filtro" class="filtro" placeholder="Filtrar por nombre" spellcheck="false">
+            <button id="boton-sincronizar" class="boton secundario">Sincronizar</button>
+          </div>
+        </header>
+
+        <div id="steam-desconectado" class="panel" hidden>
+          <h3>Conecta tu cuenta de Steam</h3>
+          <p class="suave">Necesitas una API key de Steam, que es gratuita. Se guarda solo en este ordenador.</p>
+          <form id="form-steam" class="formulario" autocomplete="off">
+            <label>
+              <span>API key de Steam</span>
+              <input name="steam_key" type="password" required spellcheck="false">
+              <small>Consíguela en <a href="#" data-url="https://steamcommunity.com/dev/apikey">steamcommunity.com/dev/apikey</a>. En «Domain name» pon <code>localhost</code>. Steam puede pedirte tener activado Steam Guard en el móvil.</small>
+            </label>
+            <label>
+              <span>Tu perfil de Steam</span>
+              <input name="perfil" required spellcheck="false" placeholder="URL del perfil, nombre o SteamID64">
+              <small>El perfil y los «Detalles de juego» deben ser públicos.</small>
+            </label>
+            <p class="error" id="error-steam" hidden></p>
+            <div class="fila-botones">
+              <button class="boton primario" type="submit">Conectar y sincronizar</button>
+              <button class="boton fantasma" type="button" data-ir="manual">Prefiero añadirlos a mano</button>
+            </div>
+          </form>
+        </div>
+
+        <p id="steam-recuento" class="recuento" hidden></p>
+        <div class="rejilla" id="steam-lista"></div>
+      </section>
+
+      <!-- Biblioteca manual -->
+      <section class="vista" id="vista-manual" hidden>
+        <header class="cabecera">
+          <h1>Biblioteca manual</h1>
+          <p class="suave">Añade juegos de cualquier sitio y puntúalos. Cuanto más puntúes, mejores recomendaciones.</p>
+        </header>
+        <div class="buscador">
+          <input id="buscador" placeholder="Busca un juego en Steam para añadirlo…" spellcheck="false" autocomplete="off">
+          <ul id="resultados" class="resultados" hidden></ul>
+        </div>
+        <details class="sin-steam">
+          <summary>¿No está en Steam? Añádelo solo con el nombre</summary>
+          <form id="form-sin-steam" class="fila-formulario" autocomplete="off">
+            <input name="nombre" placeholder="Nombre del juego" spellcheck="false" required>
+            <button class="boton secundario" type="submit">Añadir</button>
+          </form>
+          <small class="suave">Sin portada ni etiquetas: cuenta menos para el recomendador, pero no te lo volverá a sugerir.</small>
+        </details>
+        <p id="manual-recuento" class="recuento"></p>
+        <div class="rejilla" id="manual-lista"></div>
+        <div id="manual-vacio" class="vacio" hidden>
+          <p>Todavía no has añadido ningún juego.</p>
+          <p class="suave">Usa el buscador de arriba.</p>
+        </div>
+      </section>
+
       <!-- Recomendaciones -->
       <section class="vista" id="vista-recomendaciones" hidden>
         <header class="cabecera fila">
           <div>
             <h1>Recomendaciones</h1>
-            <p class="suave">Juegos que no tienes y que encajan con lo que juegas.</p>
+            <p class="suave">Juegos que no tienes y que encajan con lo que te gusta.</p>
           </div>
           <div class="acciones">
-            <div class="selector" role="radiogroup" aria-label="Modo">
-              <button class="selector-opcion activo" data-modo="normal" role="radio" aria-checked="true">Normal</button>
-              <button class="selector-opcion" data-modo="ia" role="radio" aria-checked="false">IA</button>
-            </div>
-            <button id="boton-recomendar" class="boton primario">Buscar</button>
+            <button id="boton-recomendar" class="boton primario">Buscar recomendaciones</button>
           </div>
         </header>
         <div id="recomendaciones-progreso" class="progreso" hidden>
@@ -101,7 +142,7 @@
           <div class="barra"><div id="recomendaciones-barra"></div></div>
         </div>
         <div id="recomendaciones-vacio" class="vacio">
-          <p>Pulsa «Buscar» para ver tus recomendaciones.</p>
+          <p>Pulsa «Buscar recomendaciones» para empezar.</p>
           <p class="suave">Si quieres afinarlas, responde antes a las preguntas.</p>
         </div>
         <div class="rejilla grande" id="recomendaciones-lista"></div>
@@ -120,29 +161,11 @@
       <section class="vista" id="vista-ajustes" hidden>
         <header class="cabecera">
           <h1>Ajustes</h1>
-          <p class="suave">Deja un campo vacío para conservar lo que ya tienes.</p>
         </header>
-        <form id="form-ajustes" class="formulario estrecho" autocomplete="off">
-          <label>
-            <span>API key de Steam</span>
-            <input name="steam_key" type="password" spellcheck="false" placeholder="Guardada · escribe para cambiarla">
-          </label>
-          <label>
-            <span>Perfil de Steam</span>
-            <input name="perfil" spellcheck="false" id="ajustes-perfil">
-          </label>
-          <label>
-            <span>API key de Anthropic</span>
-            <input name="anthropic_key" type="password" spellcheck="false" id="ajustes-ia">
-          </label>
-          <p class="error" id="error-ajustes" hidden></p>
-          <div class="fila-botones">
-            <button class="boton primario" type="submit">Guardar</button>
-            <button class="boton fantasma" type="button" id="boton-quitar-ia" hidden>Quitar clave de IA</button>
-          </div>
-        </form>
+        <h2>Cuenta de Steam</h2>
+        <div id="ajustes-steam" class="panel"></div>
         <h2>Descartados</h2>
-        <p class="suave">Juegos que marcaste para que no vuelvan a salir.</p>
+        <p class="suave">Juegos que marcaste como «No me interesa». No vuelven a salir en las recomendaciones.</p>
         <ul id="lista-descartados" class="lista"></ul>
       </section>
     </main>

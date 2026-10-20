@@ -10,7 +10,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import base_datos as bd  # noqa: E402
 import perfil  # noqa: E402
 import recomendador  # noqa: E402
-import recomendador_ia  # noqa: E402
 import sincronizar  # noqa: E402
 import steam_api  # noqa: E402
 
@@ -52,7 +51,7 @@ def preparar(monkeypatch):
     monkeypatch.setattr(steam_api, "etiquetas_steamspy", lambda a: ETIQUETAS.get(a, {}))
     monkeypatch.setattr(steam_api, "juegos_por_etiqueta", lambda e: POR_ETIQUETA.get(e, {}))
     monkeypatch.setattr(steam_api, "detalles_tienda", lambda a: TIENDA.get(a))
-    for modulo in (sincronizar, recomendador, recomendador_ia):
+    for modulo in (sincronizar, recomendador):
         monkeypatch.setattr(modulo, "PAUSA", 0)
     monkeypatch.setattr(sincronizar.time, "sleep", lambda s: None)
     con = bd.conectar(":memory:")
@@ -87,18 +86,57 @@ def test_recomendador_normal(monkeypatch):
     assert "Dead Cells" not in [r["nombre"] for r in recomendador.recomendar(con, perfil.construir(con))]
 
 
-def test_recomendador_ia(monkeypatch):
+def test_biblioteca_manual_y_notas(monkeypatch):
     con = preparar(monkeypatch)
-    ideas = [{"nombre": "Dead Cells", "motivo": "Como Hades y Hollow Knight a la vez"},
-             {"nombre": "Hades", "motivo": "ya lo tiene"},
-             {"nombre": "Juego Inventado 3000", "motivo": "no existe"}]
-    monkeypatch.setattr(recomendador_ia, "_pedir_a_claude", lambda k, t, n: ideas)
-    tienda = {"Dead Cells": [{"id": 588650, "name": "Dead Cells", "price": {"final": 2499}}],
-              "Hades": [{"id": 1145360, "name": "Hades"}]}
-    monkeypatch.setattr(steam_api, "buscar_tienda", lambda nombre: tienda.get(nombre, []))
-    recs = recomendador_ia.recomendar(con, perfil.construir(con), "clave")
-    assert [r["nombre"] for r in recs] == ["Dead Cells"]
-    assert recs[0]["precio"] == 24.99
+    # Añadir a mano un juego de Steam que no tienes y otro que no está en Steam
+    bd.anadir_manual(con, 588650, "Dead Cells")
+    sin_steam = bd.nuevo_id_sin_steam(con)
+    assert sin_steam < 0
+    bd.anadir_manual(con, sin_steam, "Zelda: Tears of the Kingdom")
+    assert {j["nombre"] for j in bd.juegos(con, "manual")} == {"Dead Cells", "Zelda: Tears of the Kingdom"}
+    assert len(bd.juegos(con, "steam")) == 5
+
+    # Las notas mandan sobre las horas
+    bd.puntuar(con, 271590, 5)            # GTA V: 45 min, pero le pones 5 estrellas
+    bd.puntuar(con, 1145360, 1)           # Hades: 90 h, pero 1 estrella
+    sincronizar.sincronizar(con, {"steam_key": "x", "steamid": "y"})   # resincronizar...
+    assert bd.juego(con, 271590)["nota"] == 5                         # ...no borra las notas
+    assert bd.juego(con, 588650)["en_manual"] == 1
+    p = perfil.construir(con)
+    favoritos = [j["nombre"] for j in p["favoritos"]]
+    assert favoritos[0] == "GTA V" and "Hades" not in favoritos
+    assert "Hades" in [j["nombre"] for j in p["abandonados"]]
+    assert p["pesos"]["Hack and Slash"] < 0          # etiqueta solo de un juego que no te gustó
+    assert p["puntuados"] == 2
+    try:
+        bd.puntuar(con, 271590, 9)
+        raise AssertionError("debería rechazar notas fuera de 1-5")
+    except ValueError:
+        pass
+
+    # Quitar de la biblioteca manual
+    bd.quitar_manual(con, sin_steam)
+    assert bd.juego(con, sin_steam) is None
+    # Desconectar Steam conserva lo añadido a mano
+    bd.olvidar_steam(con)
+    assert [j["nombre"] for j in bd.juegos(con)] == ["Dead Cells"]
+
+
+def test_migracion_bd_antigua(monkeypatch):
+    import sqlite3
+    import tempfile
+    with tempfile.TemporaryDirectory() as carpeta:
+        ruta = f"{carpeta}/vieja.db"
+        vieja = sqlite3.connect(ruta)
+        vieja.execute("CREATE TABLE juegos (appid INTEGER PRIMARY KEY, nombre TEXT, minutos INTEGER,"
+                      " minutos_2sem INTEGER, ultima_vez INTEGER)")
+        vieja.execute("INSERT INTO juegos VALUES (1145360, 'Hades', 5400, 0, 0)")
+        vieja.commit()
+        vieja.close()
+        con = bd.conectar(ruta)
+        j = bd.juego(con, 1145360)
+        assert j["en_steam"] == 1 and j["en_manual"] == 0 and j["nota"] is None
+        con.close()
 
 
 def test_resolver_steamid():

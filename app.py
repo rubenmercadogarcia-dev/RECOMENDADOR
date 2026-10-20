@@ -17,19 +17,23 @@ import configuracion
 import perfil as mod_perfil
 import preguntas as mod_preguntas
 import recomendador
-import recomendador_ia
 import steam_api
-from sincronizar import sincronizar
+from sincronizar import asegurar_etiquetas, sincronizar
 
 # Solo dejamos abrir en el navegador direcciones de confianza
 URLS_PERMITIDAS = ("https://store.steampowered.com/", "https://steamcommunity.com/",
-                   "https://console.anthropic.com/", "https://github.com/")
+                   "https://github.com/")
 
 
 def ruta_recurso(relativa: str) -> Path:
     """Ruta a un archivo del programa, también cuando va empaquetado en un .exe."""
     base = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
     return base / relativa
+
+
+def _juego_para_ui(j) -> dict:
+    return {"appid": j["appid"], "nombre": j["nombre"], "horas": round(j["minutos"] / 60, 1),
+            "nota": j["nota"], "en_steam": bool(j["en_steam"]), "en_manual": bool(j["en_manual"])}
 
 
 class Api:
@@ -77,24 +81,32 @@ class Api:
         self._hilo.start()
         return {"ok": True}
 
-    # ---------- estado y configuración ----------
+    def _etiquetar(self, con, appid):
+        """Intenta bajar las etiquetas de un juego; si Steam no responde, no pasa nada."""
+        try:
+            asegurar_etiquetas(con, int(appid))
+        except Exception:
+            traceback.print_exc()
+
+    # ---------- estado y conexión con Steam ----------
 
     def estado(self):
         config = configuracion.cargar()
         con = self._con()
         try:
-            sincronizado = bool(bd.juegos(con))
+            hay_juegos = bool(bd.juegos(con))
+            hay_steam = bool(bd.juegos(con, "steam"))
         finally:
             con.close()
         return {
-            "configurado": bool(config.get("steam_key") and config.get("steamid")),
-            "tiene_ia": bool(config.get("anthropic_key")),
-            "sincronizado": sincronizado,
+            "steam_conectado": bool(config.get("steam_key") and config.get("steamid")),
+            "steam_sincronizado": hay_steam,
+            "hay_juegos": hay_juegos,
             "steamid": config.get("steamid", ""),
         }
 
-    def guardar_config(self, steam_key, perfil_steam, anthropic_key):
-        """Guarda las claves. Un campo vacío conserva el valor que ya había."""
+    def conectar_steam(self, steam_key, perfil_steam):
+        """Guarda la conexión con Steam. Un campo vacío conserva el valor que ya había."""
         config = configuracion.cargar()
         steam_key = (steam_key or "").strip() or config.get("steam_key", "")
         perfil_steam = (perfil_steam or "").strip()
@@ -108,15 +120,20 @@ class Api:
         if not steamid:
             return {"ok": False, "error": "Falta tu perfil de Steam."}
         config.update(steam_key=steam_key, steamid=steamid)
-        if anthropic_key is not None and anthropic_key.strip():
-            config["anthropic_key"] = anthropic_key.strip()
         configuracion.guardar(config)
         return {"ok": True, "steamid": steamid}
 
-    def borrar_clave_ia(self):
+    def desconectar_steam(self):
+        """Borra la clave y los juegos de Steam (lo añadido a mano se queda)."""
         config = configuracion.cargar()
-        config.pop("anthropic_key", None)
+        config.pop("steam_key", None)
+        config.pop("steamid", None)
         configuracion.guardar(config)
+        con = self._con()
+        try:
+            bd.olvidar_steam(con)
+        finally:
+            con.close()
         return {"ok": True}
 
     # ---------- tareas largas ----------
@@ -126,30 +143,100 @@ class Api:
             return dict(self._tarea)
 
     def iniciar_sincronizacion(self):
+        config = configuracion.cargar()
+        if not config.get("steam_key"):
+            return {"ok": False, "error": "Primero conecta tu cuenta de Steam."}
+
         def tarea():
             con = self._con()
             try:
-                sincronizar(con, configuracion.cargar(), self._avisar)
+                sincronizar(con, config, self._avisar)
             finally:
                 con.close()
         return self._lanzar("sincronizar", tarea)
 
-    def iniciar_recomendacion(self, modo="normal"):
+    def iniciar_recomendacion(self):
         def tarea():
             con = self._con()
             try:
-                datos_perfil = mod_perfil.construir(con)
-                if modo == "ia":
-                    clave = configuracion.cargar().get("anthropic_key")
-                    if not clave:
-                        raise RuntimeError("No hay API key de Anthropic. Añádela en Ajustes.")
-                    return recomendador_ia.recomendar(con, datos_perfil, clave, avisar=self._avisar)
-                return recomendador.recomendar(con, datos_perfil, avisar=self._avisar)
+                return recomendador.recomendar(con, mod_perfil.construir(con), avisar=self._avisar)
             finally:
                 con.close()
         return self._lanzar("recomendar", tarea)
 
-    # ---------- datos para las pantallas ----------
+    # ---------- bibliotecas ----------
+
+    def biblioteca(self, origen):
+        con = self._con()
+        try:
+            return [_juego_para_ui(j) for j in bd.juegos(con, origen)]
+        finally:
+            con.close()
+
+    def buscar_juego(self, texto):
+        """Busca en la tienda de Steam para añadir un juego a mano."""
+        texto = (texto or "").strip()
+        if len(texto) < 2:
+            return {"ok": True, "resultados": []}
+        try:
+            items = steam_api.buscar_tienda(texto)
+        except Exception as e:
+            return {"ok": False, "error": f"No se pudo buscar en Steam: {e}"}
+        con = self._con()
+        try:
+            manuales = {j["appid"] for j in bd.juegos(con, "manual")}
+        finally:
+            con.close()
+        return {"ok": True, "resultados": [
+            {"appid": i["id"], "nombre": i["name"], "imagen": i.get("tiny_image", ""),
+             "anadido": i["id"] in manuales}
+            for i in items if i.get("id")][:10]}
+
+    def anadir_manual(self, appid, nombre, nota=None):
+        con = self._con()
+        try:
+            bd.anadir_manual(con, int(appid), nombre)
+            if nota:
+                bd.puntuar(con, int(appid), int(nota))
+            self._etiquetar(con, appid)
+        finally:
+            con.close()
+        return {"ok": True}
+
+    def anadir_sin_steam(self, nombre, nota=None):
+        """Para juegos que no están en Steam (consola, otras tiendas...)."""
+        nombre = (nombre or "").strip()
+        if not nombre:
+            return {"ok": False, "error": "Escribe el nombre del juego."}
+        con = self._con()
+        try:
+            appid = bd.nuevo_id_sin_steam(con)
+            bd.anadir_manual(con, appid, nombre)
+            if nota:
+                bd.puntuar(con, appid, int(nota))
+        finally:
+            con.close()
+        return {"ok": True, "appid": appid}
+
+    def quitar_manual(self, appid):
+        con = self._con()
+        try:
+            bd.quitar_manual(con, int(appid))
+        finally:
+            con.close()
+        return {"ok": True}
+
+    def puntuar(self, appid, nota):
+        con = self._con()
+        try:
+            bd.puntuar(con, int(appid), int(nota) if nota else None)
+            if nota:
+                self._etiquetar(con, appid)
+        finally:
+            con.close()
+        return {"ok": True}
+
+    # ---------- perfil, preguntas y descartes ----------
 
     def perfil(self):
         con = self._con()
@@ -158,15 +245,12 @@ class Api:
             minutos_totales = sum(j["minutos"] for j in bd.juegos(con))
         finally:
             con.close()
-
-        def juego(j):
-            return {"appid": j["appid"], "nombre": j["nombre"], "horas": round(j["minutos"] / 60, 1)}
-
         maximo = p["etiquetas"][0][1] if p["etiquetas"] else 1
         return {
             "total": p["total"],
-            "favoritos": [juego(j) for j in p["favoritos"]],
-            "recientes": [juego(j) for j in p["recientes"]],
+            "puntuados": p["puntuados"],
+            "favoritos": [_juego_para_ui(j) for j in p["favoritos"]],
+            "recientes": [_juego_para_ui(j) for j in p["recientes"]],
             "abandonados": len(p["abandonados"]),
             "sin_jugar": len(p["sin_jugar"]),
             "horas_totales": round(minutos_totales / 60),
@@ -181,8 +265,7 @@ class Api:
             con.close()
         # En la ventana quitamos las pistas de terminal "(... o Enter)" y ponemos otras
         ayudas = {"evitar": "Separadas por comas. Por ejemplo: Horror, Sports",
-                  "presupuesto": "Déjalo vacío si no hay límite.",
-                  "ahora": "Solo lo tiene en cuenta el modo IA."}
+                  "presupuesto": "Déjalo vacío si no hay límite."}
         return [{"clave": c, "texto": t.split(" (")[0], "ayuda": ayudas.get(c, ""),
                  "opciones": o, "valor": actuales.get(c, "")}
                 for c, t, o in mod_preguntas.PREGUNTAS]

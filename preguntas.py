@@ -10,7 +10,6 @@ PREGUNTAS = [
      ["relajado", "equilibrado", "difícil", "me da igual"]),
     ("evitar", "¿Alguna etiqueta o género que NO quieras? (separadas por comas, o Enter)", None),
     ("presupuesto", "¿Precio máximo en euros? (Enter = sin límite)", None),
-    ("ahora", "¿Algo concreto que te apetezca ahora? (solo lo usa el modo IA, o Enter)", None),
 ]
 
 

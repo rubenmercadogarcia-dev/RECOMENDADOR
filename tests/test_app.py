@@ -49,53 +49,73 @@ def test_flujo_completo():
     with tempfile.TemporaryDirectory() as carpeta:
         try:
             api = preparar(mp, carpeta)
-            assert api.estado()["configurado"] is False
-
-            # Configuración inicial: error claro y luego éxito
-            r = api.guardar_config("clave", "noexiste", "")
-            assert r["ok"] is False and "noexiste" in r["error"]
-            assert api.guardar_config("clave", "rubenmercadogarcia", "")["ok"]
+            mp.setattr(steam_api, "buscar_tienda", lambda texto: [
+                {"id": 588650, "name": "Dead Cells", "tiny_image": "https://x/dc.jpg"},
+                {"id": 1145360, "name": "Hades"}])
             estado = api.estado()
-            assert estado["configurado"] and not estado["tiene_ia"] and not estado["sincronizado"]
+            assert not estado["steam_conectado"] and not estado["hay_juegos"]
 
-            # Campo vacío conserva la clave guardada
-            assert api.guardar_config("", "", "clave-ia")["ok"]
+            # Biblioteca manual sin Steam conectado
+            assert api.iniciar_sincronizacion()["ok"] is False
+            r = api.buscar_juego("dead")
+            assert r["ok"] and r["resultados"][0] == {"appid": 588650, "nombre": "Dead Cells",
+                                                     "imagen": "https://x/dc.jpg", "anadido": False}
+            assert api.buscar_juego("d")["resultados"] == []
+            api.anadir_manual(588650, "Dead Cells", 5)
+            assert api.buscar_juego("dead")["resultados"][0]["anadido"] is True
+            assert api.anadir_sin_steam("   ")["ok"] is False
+            zelda = api.anadir_sin_steam("Zelda: Tears of the Kingdom", 4)["appid"]
+            manual = api.biblioteca("manual")
+            assert {(j["nombre"], j["nota"]) for j in manual} == {("Dead Cells", 5), ("Zelda: Tears of the Kingdom", 4)}
+            assert api.perfil()["favoritos"][0]["nombre"] == "Dead Cells"
+            assert api.estado()["hay_juegos"]
+
+            # Conectar Steam: error claro y luego éxito
+            r = api.conectar_steam("clave", "noexiste")
+            assert r["ok"] is False and "noexiste" in r["error"]
+            assert api.conectar_steam("clave", "rubenmercadogarcia")["ok"]
+            assert api.conectar_steam("", "")["ok"]                     # vacío conserva lo guardado
             assert configuracion.cargar()["steam_key"] == "clave"
-            assert api.estado()["tiene_ia"]
-            api.borrar_clave_ia()
-            assert not api.estado()["tiene_ia"]
-
-            # Sincronizar en segundo plano
             assert api.iniciar_sincronizacion()["ok"]
             p = esperar(api)
             assert p["error"] == "" and p["mensaje"] == "Sincronización terminada."
-            assert api.estado()["sincronizado"]
+            assert api.estado()["steam_sincronizado"]
+            assert len(api.biblioteca("steam")) == 5
+            assert api.biblioteca("manual")[0]["nota"] in (4, 5)        # sincronizar no borra lo manual
+
+            # Puntuar un juego de Steam y quitar la nota
+            api.puntuar(271590, 5)
+            assert next(j for j in api.biblioteca("steam") if j["appid"] == 271590)["nota"] == 5
+            api.puntuar(271590, None)
+            assert next(j for j in api.biblioteca("steam") if j["appid"] == 271590)["nota"] is None
 
             perfil = api.perfil()
-            assert perfil["total"] == 5 and perfil["horas_totales"] == 191
-            assert perfil["favoritos"][0] == {"appid": 1145360, "nombre": "Hades", "horas": 90.0}
+            assert perfil["total"] == 7 and perfil["horas_totales"] == 191 and perfil["puntuados"] == 2
             assert perfil["etiquetas"][0]["peso"] == 1.0
 
             # Preguntas
-            preguntas = api.preguntas()
-            assert [q["clave"] for q in preguntas][:2] == ["duracion", "modo"]
+            assert "ahora" not in [q["clave"] for q in api.preguntas()]
             api.guardar_preferencias({"evitar": "horror", "presupuesto": "30", "inventada": "x"})
             valores = {q["clave"]: q["valor"] for q in api.preguntas()}
             assert valores["evitar"] == "horror" and "inventada" not in valores
 
-            # Recomendar, descartar y recuperar
-            assert api.iniciar_recomendacion("normal")["ok"]
+            # Recomendar: no recomienda lo que ya tienes (ni lo añadido a mano)
+            assert api.iniciar_recomendacion()["ok"]
             p = esperar(api)
             nombres = [r["nombre"] for r in p["resultado"]]
-            assert nombres[0] == "Dead Cells" and "Roguelite de terror" not in nombres
-            api.descartar(588650, "Dead Cells")
-            assert api.descartados() == [{"appid": 588650, "nombre": "Dead Cells"}]
-            api.recuperar(588650)
+            assert "Dead Cells" not in nombres and "Balatro" in nombres
+            api.descartar(2379780, "Balatro")
+            assert api.descartados() == [{"appid": 2379780, "nombre": "Balatro"}]
+            api.recuperar(2379780)
             assert api.descartados() == []
 
-            # Modo IA sin clave: error explicado, no se cuelga
-            api.iniciar_recomendacion("ia")
-            assert "Anthropic" in esperar(api)["error"]
+            # Quitar de la manual y desconectar Steam
+            api.quitar_manual(zelda)
+            assert [j["nombre"] for j in api.biblioteca("manual")] == ["Dead Cells"]
+            api.desconectar_steam()
+            estado = api.estado()
+            assert not estado["steam_conectado"] and not estado["steam_sincronizado"]
+            assert [j["nombre"] for j in api.biblioteca("manual")] == ["Dead Cells"]
 
             # Solo abre direcciones de confianza
             assert api.abrir_url("file:///C:/Windows/system32/calc.exe")["ok"] is False

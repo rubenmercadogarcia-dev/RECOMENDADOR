@@ -51,6 +51,8 @@ def juegos_poseidos(key: str, steamid: str) -> list[dict]:
     datos = _get(f"{API}/IPlayerService/GetOwnedGames/v1/", {
         "key": key, "steamid": steamid,
         "include_appinfo": 1, "include_played_free_games": 1,
+        # Sin esto, Steam oculta algunos juegos con "perfil limitado"
+        "skip_unvetted_apps": 0,
     })["response"]
     if "games" not in datos:
         raise ErrorSteam("Steam no devuelve juegos. ¿Es público el perfil, "

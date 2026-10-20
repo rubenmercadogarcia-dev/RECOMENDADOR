@@ -22,6 +22,26 @@ def etiquetas_de_juego(appid: int) -> dict[str, float]:
     return {n: 1.0 for n in nombres}
 
 
+def juegos_sin_etiquetas(con) -> list:
+    """Juegos que necesitan etiquetas: los más jugados, los puntuados y los
+    añadidos a mano (los que no están en Steam, con id negativo, no tienen)."""
+    todos = bd.juegos(con)
+    jugados = [j for j in todos if j["minutos"] > 0][:JUEGOS_A_ETIQUETAR]
+    importantes = [j for j in todos if j["nota"] or j["en_manual"]]
+    vistos, resultado = set(), []
+    for j in jugados + importantes:
+        if j["appid"] > 0 and j["appid"] not in vistos and not bd.tiene_etiquetas(con, j["appid"]):
+            vistos.add(j["appid"])
+            resultado.append(j)
+    return resultado
+
+
+def asegurar_etiquetas(con, appid: int) -> None:
+    """Descarga las etiquetas de un juego si aún no las tenemos."""
+    if appid > 0 and not bd.tiene_etiquetas(con, appid):
+        bd.guardar_etiquetas(con, appid, etiquetas_de_juego(appid))
+
+
 def avisar_por_terminal(mensaje: str, actual: int | None = None, total: int | None = None) -> None:
     """Forma por defecto de contar el progreso: escribirlo en la terminal.
     La interfaz gráfica pasa su propia función para mover la barra de progreso."""
@@ -34,8 +54,7 @@ def sincronizar(con, config: dict, avisar=avisar_por_terminal) -> None:
     bd.guardar_juegos(con, juegos)
     avisar(f"{len(juegos)} juegos guardados.")
 
-    jugados = [j for j in bd.juegos(con) if j["minutos"] > 0][:JUEGOS_A_ETIQUETAR]
-    pendientes = [j for j in jugados if not bd.tiene_etiquetas(con, j["appid"])]
+    pendientes = juegos_sin_etiquetas(con)
     if not pendientes:
         avisar("Las etiquetas ya estaban al día.")
         return

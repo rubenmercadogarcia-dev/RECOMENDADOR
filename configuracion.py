@@ -23,10 +23,13 @@ RUTA_CONFIG = carpeta_datos() / "config.json"
 
 
 def cargar() -> dict:
-    if RUTA_CONFIG.exists():
-        with open(RUTA_CONFIG, encoding="utf-8") as f:
-            return json.load(f)
-    return {}
+    if not RUTA_CONFIG.exists():
+        return {}
+    with open(RUTA_CONFIG, encoding="utf-8") as f:
+        config = json.load(f)
+    if config.pop("anthropic_key", None) is not None:  # de la v0.2, ya no se usa
+        guardar(config)
+    return config
 
 
 def guardar(config: dict) -> None:
@@ -57,11 +60,7 @@ def asistente_inicial(resolver_steamid) -> dict:
                 print("   Prueba con la URL completa de tu perfil (cópiala del navegador).")
     print(f"   SteamID encontrado: {steamid}")
 
-    print("\n3) (Opcional) API key de Anthropic para el modo IA.")
-    print("   Déjalo en blanco si no tienes; el modo normal es gratis.")
-    anthropic_key = input("API key de Anthropic: ").strip()
-
-    config = {"steam_key": steam_key, "steamid": steamid, "anthropic_key": anthropic_key}
+    config = {"steam_key": steam_key, "steamid": steamid}
     guardar(config)
     print(f"\nConfiguración guardada en {RUTA_CONFIG}")
     return config

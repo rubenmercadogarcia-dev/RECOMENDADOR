@@ -55,7 +55,7 @@ def recomendar(con, perfil: dict, n: int = 10, avisar=avisar_por_terminal) -> li
     vetados = bd.descartados(con)
     prefs = bd.preferencias(con)
     evitar = {e.strip().lower() for e in prefs.get("evitar", "").split(",") if e.strip()}
-    pesos = dict(perfil["etiquetas"])
+    pesos = perfil.get("pesos") or dict(perfil["etiquetas"])  # las negativas restan
     fuertes = [e for e, _ in perfil["etiquetas"] if e not in GENERICAS][:ETIQUETAS_A_EXPLORAR]
     if not fuertes:
         avisar("Aún no tengo etiquetas tuyas. Sincroniza primero con Steam.")
@@ -75,7 +75,7 @@ def recomendar(con, perfil: dict, n: int = 10, avisar=avisar_por_terminal) -> li
             c["coinciden"].add(etiqueta)
         time.sleep(PAUSA)
     if not candidatos:
-        avisar("No he encontrado candidatos (¿SteamSpy no responde?). Prueba el modo IA.")
+        avisar("No he encontrado candidatos (¿SteamSpy no responde?). Prueba en un rato.")
         return []
 
     # 2) Preselección rápida y análisis a fondo de los mejores

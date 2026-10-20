@@ -1,25 +1,21 @@
 # RECOMENDADOR
 
-Recomendador de videojuegos a partir de tu biblioteca de Steam. Mira qué juegos te han enganchado (por las horas jugadas), cuáles abandonaste, te hace unas preguntas sobre lo que te apetece y te recomienda juegos que **no tienes**, explicando el porqué.
+Recomendador de videojuegos **gratuito**. Junta tu biblioteca de Steam y los juegos que añadas a mano (también de consola u otras tiendas), aprende de tus notas y de tus horas de juego, te hace unas preguntas y te recomienda juegos que **no tienes**, explicando el porqué. No hace falta pagar nada.
 
-> 🚧 **Estado: v0.2 en desarrollo.** Interfaz gráfica oscura (`app.py`) y versión de terminal (`main.py`). Próximo objetivo: un `.exe` para Windows en *Releases*.
+> 🚧 **Estado: v0.3 en desarrollo.** Próximos pasos: colecciones (pendientes, completados, platinos) y un recomendador nuevo con catálogo propio.
 
 ## Qué hace
 
-1. **Sincroniza** tu biblioteca de Steam: juegos y horas jugadas.
-2. **Crea tu perfil**: lo que más te engancha, lo que dejaste y tus etiquetas fuertes (Roguelite, Metroidvania…).
-3. **Te pregunta** para afinar: duración, solo o cooperativo, dificultad, presupuesto, qué evitar…
-4. **Recomienda** de dos maneras:
-   - **Modo normal (gratis):** busca juegos que comparten etiquetas con tus favoritos y los puntúa según tus gustos y sus reseñas.
-   - **Modo IA (opcional):** Claude propone juegos, y el programa comprueba en la tienda que existen y que no los tienes.
-5. Si una recomendación no te interesa, la **descartas** y no vuelve a salir.
+1. **Biblioteca de Steam (opcional):** importa tus juegos y horas con tu API key de Steam.
+2. **Biblioteca manual:** busca juegos en la tienda de Steam y añádelos, o escribe el nombre de los que no están en Steam.
+3. **Puntúa** cualquier juego de 1 a 5 estrellas. Tu nota manda sobre las horas jugadas.
+4. **Perfil:** lo que más te gusta y tus etiquetas fuertes (Roguelite, Metroidvania…).
+5. **Recomendaciones** que comparten lo que te gusta, filtradas por tus respuestas a las preguntas. Lo que descartas no vuelve a salir.
 
 ## Requisitos
 
 - Python 3.10 o superior
-- Una **API key de Steam** (gratis): https://steamcommunity.com/dev/apikey
-- Tu **perfil de Steam público**, incluidos los *Detalles de juego* (Perfil → Editar perfil → Privacidad)
-- *(Opcional)* Una API key de Anthropic para el modo IA
+- *(Opcional, para importar tu biblioteca de Steam)* Una **API key de Steam** gratuita (https://steamcommunity.com/dev/apikey) y tu **perfil público**, incluidos los *Detalles de juego* (Perfil → Editar perfil → Privacidad)
 
 ## Instalación y uso
 
@@ -28,12 +24,12 @@ git clone https://github.com/rubenmercadogarcia-dev/RECOMENDADOR.git
 cd RECOMENDADOR
 py -m pip install -r requirements.txt
 py app.py        # ventana con interfaz
-py main.py       # versión de terminal
+py main.py       # versión de terminal (solo Steam, más básica)
 ```
 
 En Windows, la ventana usa Microsoft Edge WebView2, que ya viene con Windows 10 y 11.
 
-La primera vez te pide las claves y sincroniza tu biblioteca. Las claves y la base de datos se guardan **fuera del proyecto**:
+La clave de Steam y la base de datos se guardan **fuera del proyecto**:
 
 - Windows: `%APPDATA%\Recomendador\`
 - Linux/macOS: `~/.recomendador/`
@@ -49,10 +45,9 @@ La primera vez te pide las claves y sincroniza tu biblioteca. Las claves y la ba
 | `steam_api.py` | Conexión con Steam (biblioteca, tienda) y SteamSpy (etiquetas) |
 | `base_datos.py` | Base de datos SQLite |
 | `sincronizar.py` | Descarga la biblioteca y las etiquetas |
-| `perfil.py` | Calcula tus gustos a partir de las horas |
+| `perfil.py` | Calcula tus gustos a partir de tus notas y horas |
 | `preguntas.py` | Preguntas para afinar |
-| `recomendador.py` | Modo normal |
-| `recomendador_ia.py` | Modo IA |
+| `recomendador.py` | El recomendador |
 | `tests/` | Pruebas con datos simulados: `py tests/test_borrador.py` y `py tests/test_app.py` |
 
 ## Fuentes de datos
@@ -65,6 +60,8 @@ La primera vez te pide las claves y sincroniza tu biblioteca. Las claves y la ba
 
 - [x] v0.1 – Borrador en terminal
 - [x] v0.2 – Interfaz gráfica sobria y oscura
-- [ ] Probar con bibliotecas reales y ajustar las puntuaciones
+- [x] v0.3 – Biblioteca manual, puntuaciones y sin claves de pago
+- [ ] Colecciones: pendientes (con carpetas), completados y platinos
+- [ ] Recomendador nuevo: catálogo propio con prioridad indie y hasta 10 preguntas
 - [ ] Empaquetar como `.exe` con PyInstaller y publicarlo en *Releases*
 - [ ] Página web de presentación con botón de descarga

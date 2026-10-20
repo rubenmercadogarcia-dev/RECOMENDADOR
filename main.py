@@ -7,7 +7,6 @@ import configuracion
 import perfil as mod_perfil
 import preguntas
 import recomendador
-import recomendador_ia
 import steam_api
 from sincronizar import sincronizar
 
@@ -16,9 +15,8 @@ MENU = """
  1) Sincronizar con Steam
  2) Ver mi perfil
  3) Responder preguntas para afinar
- 4) Recomendar (modo normal, gratis)
- 5) Recomendar con IA
- 6) Cambiar configuración
+ 4) Recomendar
+ 5) Cambiar configuración
  0) Salir
 """
 
@@ -64,12 +62,6 @@ def main() -> None:
             elif opcion == "4":
                 mostrar_recomendaciones(con, recomendador.recomendar(con, mod_perfil.construir(con)))
             elif opcion == "5":
-                if not config.get("anthropic_key"):
-                    print("No tienes API key de Anthropic. Añádela en la opción 6.")
-                    continue
-                recs = recomendador_ia.recomendar(con, mod_perfil.construir(con), config["anthropic_key"])
-                mostrar_recomendaciones(con, recs)
-            elif opcion == "6":
                 config = configuracion.asistente_inicial(steam_api.resolver_steamid)
             elif opcion == "0":
                 break
