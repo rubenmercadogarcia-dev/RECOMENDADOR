@@ -34,7 +34,7 @@ Recomendador de videojuegos **gratuito**. Junta tu biblioteca de Steam y los jue
 
 👉 **[Descargar RECOMENDADOR.exe](https://github.com/rubenmercadogarcia-dev/RECOMENDADOR/releases/latest/download/RECOMENDADOR.exe)** (Windows 10 y 11) · [Página web](https://rubenmercadogarcia-dev.github.io/RECOMENDADOR/)
 
-Para publicar una versión nueva basta con crear y subir una etiqueta (`git tag v1.0.0 && git push origin v1.0.0`): GitHub construye el `.exe`, comprueba que arranca y lo publica en *Releases* (`.github/workflows/publicar.yml`).
+Para publicar una versión nueva basta con cambiar el número del archivo `VERSION` (por ejemplo, de `0.5.0` a `0.6.0`) y subirlo: GitHub construye el `.exe`, comprueba que arranca y lo publica en *Releases* (`.github/workflows/publicar.yml`).
 
 ## Requisitos para ejecutarlo desde el código
 
