@@ -22,20 +22,26 @@ def etiquetas_de_juego(appid: int) -> dict[str, float]:
     return {n: 1.0 for n in nombres}
 
 
-def sincronizar(con, config: dict) -> None:
-    print("Descargando tu biblioteca de Steam...")
+def avisar_por_terminal(mensaje: str, actual: int | None = None, total: int | None = None) -> None:
+    """Forma por defecto de contar el progreso: escribirlo en la terminal.
+    La interfaz gráfica pasa su propia función para mover la barra de progreso."""
+    print(f"  [{actual}/{total}] {mensaje}" if total else mensaje)
+
+
+def sincronizar(con, config: dict, avisar=avisar_por_terminal) -> None:
+    avisar("Descargando tu biblioteca de Steam...")
     juegos = steam_api.juegos_poseidos(config["steam_key"], config["steamid"])
     bd.guardar_juegos(con, juegos)
-    print(f"  {len(juegos)} juegos guardados.")
+    avisar(f"{len(juegos)} juegos guardados.")
 
     jugados = [j for j in bd.juegos(con) if j["minutos"] > 0][:JUEGOS_A_ETIQUETAR]
     pendientes = [j for j in jugados if not bd.tiene_etiquetas(con, j["appid"])]
     if not pendientes:
-        print("  Las etiquetas ya estaban al día.")
+        avisar("Las etiquetas ya estaban al día.")
         return
-    print(f"Leyendo etiquetas de {len(pendientes)} juegos (tarda un poco)...")
+    avisar(f"Leyendo etiquetas de {len(pendientes)} juegos (tarda un poco)...")
     for i, j in enumerate(pendientes, 1):
         bd.guardar_etiquetas(con, j["appid"], etiquetas_de_juego(j["appid"]))
-        print(f"  [{i}/{len(pendientes)}] {j['nombre']}")
+        avisar(j["nombre"], i, len(pendientes))
         time.sleep(PAUSA)
-    print("Sincronización terminada.")
+    avisar("Sincronización terminada.")

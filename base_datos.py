@@ -83,5 +83,11 @@ def descartar(con, appid: int, nombre: str) -> None:
     con.commit()
 
 
+def recuperar(con, appid: int) -> None:
+    """Quita un juego de la lista de descartados."""
+    con.execute("DELETE FROM descartados WHERE appid=?", (appid,))
+    con.commit()
+
+
 def descartados(con) -> dict[int, str]:
     return {r["appid"]: r["nombre"] for r in con.execute("SELECT * FROM descartados")}
