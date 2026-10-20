@@ -226,7 +226,7 @@
       const p = portada.getBoundingClientRect();
       const r = (el, margen) => { const b = el.getBoundingClientRect();
         return { x1: b.left - p.left - margen, x2: b.right - p.left + margen, y1: b.top - p.top - margen, y2: b.bottom - p.top + margen }; };
-      return [r(boton, 70), r(document.querySelector("h1"), 10), r(document.querySelector(".lema"), 8),
+      return [r(boton, 70), r(document.querySelector(".marca"), 12), r(document.querySelector("h1"), 10), r(document.querySelector(".lema"), 8),
               r(document.getElementById("mas-flechas"), 16), r(contador, 10)];
     }
 
