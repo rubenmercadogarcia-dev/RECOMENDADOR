@@ -1,0 +1,51 @@
+# Genera el catálogo de juegos una vez al mes y lo guarda en datos/catalogo.json.gz.
+# También se puede lanzar a mano: pestaña Actions → "Actualizar catálogo" → Run workflow.
+name: Actualizar catálogo
+
+on:
+  schedule:
+    - cron: "17 4 1 * *"        # día 1 de cada mes, 04:17 UTC
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - herramientas/generar_catalogo.py
+      - .github/workflows/catalogo.yml
+
+permissions:
+  contents: write                # para poder guardar el catálogo en el repositorio
+
+concurrency:
+  group: catalogo
+  cancel-in-progress: false
+
+jobs:
+  generar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependencias
+        run: pip install requests
+
+      - name: Generar catálogo (tarda unas horas)
+        run: python herramientas/generar_catalogo.py
+
+      - name: Guardar el catálogo y el registro en el repositorio
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add datos/
+          if git diff --cached --quiet; then
+            echo "Sin cambios."
+          else
+            git commit -m "Catálogo actualizado automáticamente"
+            git pull --rebase
+            git push
+          fi
