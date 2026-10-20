@@ -13,6 +13,7 @@ import webbrowser
 from pathlib import Path
 
 import base_datos as bd
+import catalogo as mod_catalogo
 import configuracion
 import perfil as mod_perfil
 import preguntas as mod_preguntas
@@ -155,14 +156,33 @@ class Api:
                 con.close()
         return self._lanzar("sincronizar", tarea)
 
-    def iniciar_recomendacion(self):
+    def iniciar_recomendacion(self, excluir=None):
+        """excluir: juegos ya mostrados, para pedir «otra tanda» distinta."""
+        excluir = [int(a) for a in (excluir or []) if str(a).lstrip("-").isdigit()]
+
         def tarea():
             con = self._con()
             try:
-                return recomendador.recomendar(con, mod_perfil.construir(con), avisar=self._avisar)
+                return recomendador.recomendar(con, mod_perfil.construir(con), avisar=self._avisar,
+                                               excluir=excluir)
             finally:
                 con.close()
         return self._lanzar("recomendar", tarea)
+
+    # ---------- catálogo ----------
+
+    def catalogo_estado(self):
+        return mod_catalogo.estado()
+
+    def actualizar_catalogo(self):
+        """Busca una versión nueva del catálogo en el repositorio (a mano, desde Ajustes)."""
+        resultado = mod_catalogo.actualizar(forzar=True)
+        mensajes = {"actualizado": "Catálogo actualizado.", "al-dia": "El catálogo ya estaba al día.",
+                    "sin-conexion": "No hay conexión con GitHub.",
+                    "no-publicado": "Todavía no hay catálogo publicado en el repositorio.",
+                    "error": "No se pudo descargar el catálogo."}
+        return {"ok": resultado in ("actualizado", "al-dia"), "mensaje": mensajes.get(resultado, resultado),
+                **mod_catalogo.estado()}
 
     # ---------- bibliotecas ----------
 
@@ -346,24 +366,45 @@ class Api:
         }
 
     def preguntas(self):
+        """Las 10 preguntas con tus respuestas actuales. La primera ofrece tus favoritos."""
         con = self._con()
         try:
             actuales = bd.preferencias(con)
+            favoritos = mod_perfil.construir(con)["favoritos"][:12]
         finally:
             con.close()
-        # En la ventana quitamos las pistas de terminal "(... o Enter)" y ponemos otras
-        ayudas = {"evitar": "Separadas por comas. Por ejemplo: Horror, Sports",
-                  "presupuesto": "Déjalo vacío si no hay límite."}
-        return [{"clave": c, "texto": t.split(" (")[0], "ayuda": ayudas.get(c, ""),
-                 "opciones": o, "valor": actuales.get(c, "")}
-                for c, t, o in mod_preguntas.PREGUNTAS]
+        resultado = []
+        for p in mod_preguntas.PREGUNTAS:
+            q = {"clave": p["clave"], "tipo": p["tipo"], "texto": p["texto"], "ayuda": p.get("ayuda", "")}
+            if p["tipo"] == "juego":
+                opciones = [{"valor": "", "texto": "Cualquiera"}]
+                opciones += [{"valor": str(j["appid"]), "texto": j["nombre"]} for j in favoritos]
+                q["opciones"], q["valor"] = opciones, actuales.get(p["clave"], "")
+                if q["valor"] and q["valor"] not in {o["valor"] for o in opciones}:
+                    q["valor"] = ""      # ese juego ya no está entre tus favoritos
+            elif p["tipo"] == "filtros":
+                q["campos"] = [{**c, "valor": actuales.get(c["clave"], "")} for c in p["campos"]]
+            else:
+                q["opciones"] = [{"valor": o, "texto": o} for o in p["opciones"]]
+                q["valor"] = actuales.get(p["clave"], "")
+            resultado.append(q)
+        return resultado
+
+    def ajustes_recomendador(self):
+        con = self._con()
+        try:
+            return {"indie": bd.preferencias(con).get("indie", "priorizar"),
+                    "opciones_indie": mod_preguntas.AJUSTES["indie"]}
+        finally:
+            con.close()
 
     def guardar_preferencias(self, respuestas):
-        claves = {c for c, _, _ in mod_preguntas.PREGUNTAS}
         con = self._con()
         try:
             for clave, valor in (respuestas or {}).items():
-                if clave in claves:
+                if clave in mod_preguntas.CLAVES_VALIDAS:
+                    if isinstance(valor, list):
+                        valor = ",".join(str(v) for v in valor)
                     bd.guardar_preferencia(con, clave, str(valor).strip())
         finally:
             con.close()
@@ -401,6 +442,9 @@ class Api:
 
 def main():
     import webview  # solo hace falta al abrir la ventana
+
+    # Comprueba en segundo plano si hay un catálogo nuevo (como mucho una vez a la semana)
+    threading.Thread(target=mod_catalogo.actualizar, daemon=True).start()
 
     webview.create_window(
         "RECOMENDADOR",

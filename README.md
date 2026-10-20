@@ -2,7 +2,7 @@
 
 Recomendador de videojuegos **gratuito**. Junta tu biblioteca de Steam y los juegos que añadas a mano (también de consola u otras tiendas), aprende de tus notas y de tus horas de juego, te hace unas preguntas y te recomienda juegos que **no tienes**, explicando el porqué. No hace falta pagar nada.
 
-> 🚧 **Estado: v0.4 en desarrollo.** Próximo paso: un recomendador nuevo con catálogo propio y prioridad indie.
+> 🚧 **Estado: v0.5 en desarrollo.** Próximo paso: empaquetarlo como `.exe` y publicarlo en *Releases*.
 
 ## Qué hace
 
@@ -14,7 +14,21 @@ Recomendador de videojuegos **gratuito**. Junta tu biblioteca de Steam y los jue
    - **Pendientes**, organizados en carpetas.
    - **Completados**, también con carpetas. Cuentan como juegos que te gustan.
    - **Platinos**. Un platino también cuenta como completado, y completar un juego lo quita de pendientes.
-6. **Recomendaciones** que comparten lo que te gusta, filtradas por tus respuestas a las preguntas. Puedes mandarlas a pendientes, y lo que descartas no vuelve a salir. Nunca te recomienda lo que ya tienes en tus bibliotecas o colecciones.
+6. **Recomendaciones** gratuitas a partir de un **catálogo propio** de miles de juegos, con **prioridad indie**:
+   - Antes de recomendar, te hace **10 preguntas** opcionales: si quieres algo parecido a un juego concreto, si quieres salir de tu zona de confort, modo de juego, duración, dificultad, ritmo, historia, estilo visual, ambientación, precio y etiquetas a evitar.
+   - Cada recomendación explica el porqué ("Porque te gustó Hollow Knight: Soulslike, Fantasía oscura y Metroidvania").
+   - Puedes mandarlas a pendientes o descartarlas, y pedir **otra tanda**. Nunca te recomienda lo que ya tienes.
+
+### Cómo recomienda
+
+1. Cada juego es un conjunto de etiquetas de Steam con su peso. Las etiquetas raras pesan más que las comunes (IDF): compartir "Roguelike Deckbuilder" dice mucho más que compartir "Indie".
+2. Compara cada candidato con tu perfil completo y, uno a uno, con los juegos que te gustan, y resta el parecido con los que no.
+3. Lo multiplica por su calidad (media bayesiana de reseñas), por tus respuestas y por la prioridad indie.
+4. Elige con variedad: pocos juegos "por culpa" del mismo favorito, del mismo estudio o casi idénticos entre sí.
+
+### El catálogo
+
+`herramientas/generar_catalogo.py` descarga de SteamSpy los juegos bien valorados con sus etiquetas. Lo ejecuta **GitHub Actions** el día 1 de cada mes (`.github/workflows/catalogo.yml`) y lo guarda en `datos/catalogo.json.gz`. El programa busca una versión nueva una vez a la semana. Si no hay catálogo, busca en SteamSpy en el momento (más lento).
 
 ## Requisitos
 
@@ -50,15 +64,18 @@ La clave de Steam y la base de datos se guardan **fuera del proyecto**:
 | `base_datos.py` | Base de datos SQLite |
 | `sincronizar.py` | Descarga la biblioteca y las etiquetas |
 | `perfil.py` | Calcula tus gustos a partir de tus notas y horas |
-| `preguntas.py` | Preguntas para afinar |
-| `recomendador.py` | El recomendador |
-| `tests/` | Pruebas con datos simulados: `py tests/test_borrador.py` y `py tests/test_app.py` |
+| `preguntas.py` | Las 10 preguntas |
+| `recomendador.py` | El recomendador (con catálogo) |
+| `recomendador_sin_catalogo.py` | Alternativa si aún no hay catálogo |
+| `catalogo.py` | Carga y actualiza el catálogo; etiquetas en español |
+| `herramientas/generar_catalogo.py` | Genera el catálogo (lo ejecuta GitHub Actions) |
+| `tests/` | Pruebas con datos simulados: `py tests/test_borrador.py`, `py tests/test_app.py` y `py tests/test_recomendador.py` |
 
 ## Fuentes de datos
 
 - [Steam Web API](https://steamcommunity.com/dev): biblioteca y horas (necesita API key).
 - Tienda de Steam (`appdetails`, `storesearch`): géneros, precios y búsqueda (sin clave).
-- [SteamSpy](https://steamspy.com/api.php): etiquetas de la comunidad (sin clave). Parece poco mantenido; si falla, el programa usa los géneros de la tienda.
+- [SteamSpy](https://steamspy.com/api.php): etiquetas de la comunidad y reseñas (sin clave). Se usa sobre todo para generar el catálogo una vez al mes.
 
 ## Hoja de ruta
 
@@ -66,6 +83,6 @@ La clave de Steam y la base de datos se guardan **fuera del proyecto**:
 - [x] v0.2 – Interfaz gráfica sobria y oscura
 - [x] v0.3 – Biblioteca manual, puntuaciones y sin claves de pago
 - [x] v0.4 – Colecciones: pendientes y completados con carpetas, y platinos
-- [ ] Recomendador nuevo: catálogo propio con prioridad indie y hasta 10 preguntas
+- [x] v0.5 – Catálogo propio con prioridad indie, recomendador nuevo y 10 preguntas
 - [ ] Empaquetar como `.exe` con PyInstaller y publicarlo en *Releases*
 - [ ] Página web de presentación con botón de descarga

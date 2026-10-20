@@ -323,6 +323,24 @@ h2 + .panel { margin-top: 0; }
 .destino { font-size: 12px; color: var(--tenue); margin-top: 8px; }
 .destino strong { color: var(--suave); font-weight: 600; }
 
+/* ---------- Preguntas numeradas y resultados ---------- */
+.nota-catalogo { font-size: 12px; color: var(--tenue); margin-top: 6px; }
+.nota-catalogo:empty { display: none; }
+.pregunta-cabecera { display: flex; gap: 10px; align-items: baseline; margin-bottom: 12px; }
+.pregunta-cabecera p { font-weight: 600; }
+.numero { font-size: 12px; font-weight: 700; color: var(--acento); font-variant-numeric: tabular-nums; min-width: 18px; }
+.campos { display: grid; grid-template-columns: 1fr 2fr; gap: 14px; }
+.campos label { display: grid; gap: 6px; font-size: 13px; color: var(--suave); }
+.campos small { font-size: 12px; color: var(--tenue); }
+.enviar-preguntas { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.enviar-preguntas .suave { font-size: 12px; }
+.tarjeta-etiquetas { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+.tarjeta-etiquetas span { font-size: 11px; color: var(--suave); background: var(--panel-alto); border-radius: 4px; padding: 1px 7px; }
+.tarjeta-etiquetas .indie { color: var(--acento); }
+.panel-titulo { font-weight: 600; margin-bottom: 10px; }
+.panel-ayuda { font-size: 12px; margin-top: 10px; }
+.separador { border: 0; height: 1px; background: var(--borde); margin: 20px 0; }
+
 /* ---------- Ventanas estrechas ---------- */
 @media (max-width: 1100px) {
   .cifras { grid-template-columns: repeat(2, 1fr); }
@@ -341,5 +359,6 @@ h2 + .panel { margin-top: 0; }
   .contenido { padding: 24px 16px 40px; }
   .etiqueta { grid-template-columns: 120px 1fr; }
   .capsulas { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+  .campos { grid-template-columns: 1fr; }
   .menu-cuenta { display: none; }
 }

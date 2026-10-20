@@ -58,7 +58,7 @@ def main() -> None:
             elif opcion == "2":
                 mod_perfil.mostrar(mod_perfil.construir(con))
             elif opcion == "3":
-                preguntas.preguntar(con)
+                preguntas.preguntar(con, [(j['appid'], j['nombre']) for j in mod_perfil.construir(con)['favoritos']])
             elif opcion == "4":
                 mostrar_recomendaciones(con, recomendador.recomendar(con, mod_perfil.construir(con)))
             elif opcion == "5":

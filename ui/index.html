@@ -21,7 +21,6 @@
         <button class="menu-item" data-vista="platinos">Platinos <span class="menu-cuenta" data-cuenta="platinos"></span></button>
         <p class="menu-grupo">Descubrir</p>
         <button class="menu-item" data-vista="recomendaciones">Recomendaciones</button>
-        <button class="menu-item" data-vista="preguntas">Preguntas</button>
         <p class="menu-grupo"></p>
         <button class="menu-item" data-vista="ajustes">Ajustes</button>
       </nav>
@@ -131,35 +130,33 @@
         <div id="coleccion-vacio" class="vacio" hidden></div>
       </section>
 
-      <!-- Recomendaciones -->
+      <!-- Recomendaciones: primero las preguntas, luego los resultados -->
       <section class="vista" id="vista-recomendaciones" hidden>
         <header class="cabecera fila">
           <div>
             <h1>Recomendaciones</h1>
-            <p class="suave">Juegos que no tienes y que encajan con lo que te gusta.</p>
+            <p class="suave" id="rec-subtitulo">Responde lo que quieras y pulsa «Ver recomendaciones». Todo es opcional.</p>
           </div>
-          <div class="acciones">
-            <button id="boton-recomendar" class="boton primario">Buscar recomendaciones</button>
+          <div class="acciones" id="rec-acciones-resultados" hidden>
+            <button id="boton-cambiar-respuestas" class="boton fantasma">Cambiar respuestas</button>
+            <button id="boton-otra-tanda" class="boton secundario">Otra tanda</button>
           </div>
         </header>
-        <div id="recomendaciones-progreso" class="progreso" hidden>
-          <p id="recomendaciones-mensaje"></p>
-          <div class="barra"><div id="recomendaciones-barra"></div></div>
-        </div>
-        <div id="recomendaciones-vacio" class="vacio">
-          <p>Pulsa «Buscar recomendaciones» para empezar.</p>
-          <p class="suave">Si quieres afinarlas, responde antes a las preguntas.</p>
-        </div>
-        <div class="rejilla grande" id="recomendaciones-lista"></div>
-      </section>
+        <p class="nota-catalogo" id="rec-catalogo"></p>
 
-      <!-- Preguntas -->
-      <section class="vista" id="vista-preguntas" hidden>
-        <header class="cabecera">
-          <h1>Preguntas</h1>
-          <p class="suave">Tus respuestas se tienen en cuenta en cada recomendación.</p>
-        </header>
         <form id="form-preguntas" class="preguntas"></form>
+
+        <div id="rec-resultados" hidden>
+          <div id="recomendaciones-progreso" class="progreso" hidden>
+            <p id="recomendaciones-mensaje"></p>
+            <div class="barra"><div id="recomendaciones-barra"></div></div>
+          </div>
+          <div id="recomendaciones-vacio" class="vacio" hidden>
+            <p>No he encontrado recomendaciones con esas respuestas.</p>
+            <p class="suave">Prueba a cambiar alguna respuesta o puntúa más juegos.</p>
+          </div>
+          <div class="rejilla grande" id="recomendaciones-lista"></div>
+        </div>
       </section>
 
       <!-- Ajustes -->
@@ -167,6 +164,18 @@
         <header class="cabecera">
           <h1>Ajustes</h1>
         </header>
+        <h2>Recomendaciones</h2>
+        <div class="panel" id="ajustes-recomendaciones">
+          <p class="panel-titulo">Prioridad a los juegos indie</p>
+          <div class="opciones" id="ajustes-indie"></div>
+          <p class="suave panel-ayuda">«Priorizar» da ventaja a los indies sin quitar los grandes juegos que encajen muy bien contigo.</p>
+          <hr class="separador">
+          <p class="panel-titulo">Catálogo de juegos</p>
+          <p class="suave" id="ajustes-catalogo"></p>
+          <div class="fila-botones" style="margin-top:12px">
+            <button class="boton secundario" id="boton-actualizar-catalogo">Buscar actualización</button>
+          </div>
+        </div>
         <h2>Cuenta de Steam</h2>
         <div id="ajustes-steam" class="panel"></div>
         <h2>Descartados</h2>

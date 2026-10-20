@@ -11,8 +11,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import app  # noqa: E402
+import catalogo as mod_catalogo  # noqa: E402
 import configuracion  # noqa: E402
 import recomendador  # noqa: E402
+import recomendador_sin_catalogo  # noqa: E402
 import sincronizar  # noqa: E402
 import steam_api  # noqa: E402
 from test_borrador import BIBLIOTECA, ETIQUETAS, POR_ETIQUETA, TIENDA, _MonkeyPatch  # noqa: E402
@@ -33,8 +35,9 @@ def preparar(mp, carpeta):
     mp.setattr(steam_api, "juegos_por_etiqueta", lambda e: POR_ETIQUETA.get(e, {}))
     mp.setattr(steam_api, "detalles_tienda", lambda a: TIENDA.get(a))
     mp.setattr(sincronizar, "PAUSA", 0)
-    mp.setattr(recomendador, "PAUSA", 0)
+    mp.setattr(recomendador_sin_catalogo, "PAUSA", 0)
     mp.setattr(sincronizar.time, "sleep", lambda s: None)
+    mp.setattr(mod_catalogo, "cargar", lambda forzar=False: None)
 
     def resolver(key, texto):
         if texto == "noexiste":
@@ -96,8 +99,16 @@ def test_flujo_completo():
             # Preguntas
             assert "ahora" not in [q["clave"] for q in api.preguntas()]
             api.guardar_preferencias({"evitar": "horror", "presupuesto": "30", "inventada": "x"})
-            valores = {q["clave"]: q["valor"] for q in api.preguntas()}
-            assert valores["evitar"] == "horror" and "inventada" not in valores
+            preguntas = api.preguntas()
+            assert len(preguntas) == 10
+            filtros = {c["clave"]: c["valor"] for c in preguntas[-1]["campos"]}
+            assert filtros == {"presupuesto": "30", "evitar": "horror"}
+            assert preguntas[0]["tipo"] == "juego" and preguntas[0]["opciones"][0]["texto"] == "Cualquiera"
+            api.guardar_preferencias({"ambientacion": ["terror", "acogedor"], "indie": "solo indies"})
+            valores = {q["clave"]: q.get("valor") for q in api.preguntas()}
+            assert valores["ambientacion"] == "terror,acogedor" and "inventada" not in valores
+            assert api.ajustes_recomendador()["indie"] == "solo indies"
+            api.guardar_preferencias({"ambientacion": [], "indie": "priorizar"})
 
             # Recomendar: no recomienda lo que ya tienes (ni lo añadido a mano)
             assert api.iniciar_recomendacion()["ok"]

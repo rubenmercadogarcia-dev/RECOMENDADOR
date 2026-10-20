@@ -8,8 +8,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import base_datos as bd  # noqa: E402
+import catalogo as mod_catalogo  # noqa: E402
 import perfil  # noqa: E402
 import recomendador  # noqa: E402
+import recomendador_sin_catalogo  # noqa: E402
 import sincronizar  # noqa: E402
 import steam_api  # noqa: E402
 
@@ -51,9 +53,11 @@ def preparar(monkeypatch):
     monkeypatch.setattr(steam_api, "etiquetas_steamspy", lambda a: ETIQUETAS.get(a, {}))
     monkeypatch.setattr(steam_api, "juegos_por_etiqueta", lambda e: POR_ETIQUETA.get(e, {}))
     monkeypatch.setattr(steam_api, "detalles_tienda", lambda a: TIENDA.get(a))
-    for modulo in (sincronizar, recomendador):
+    for modulo in (sincronizar, recomendador_sin_catalogo):
         monkeypatch.setattr(modulo, "PAUSA", 0)
     monkeypatch.setattr(sincronizar.time, "sleep", lambda s: None)
+    # Estas pruebas usan el método sin catálogo (el del catálogo: test_recomendador.py)
+    monkeypatch.setattr(mod_catalogo, "cargar", lambda forzar=False: None)
     con = bd.conectar(":memory:")
     sincronizar.sincronizar(con, {"steam_key": "x", "steamid": "y"})
     return con

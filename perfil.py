@@ -80,6 +80,8 @@ def construir(con) -> dict:
         "recientes": recientes,
         "etiquetas": etiquetas,   # [(etiqueta, peso), ...] de más a menos
         "pesos": dict(pesos),     # todas, también las negativas (lo que no te gusta)
+        # cuánto te gusta cada juego, para comparar juego a juego: [(appid, nombre, afecto)]
+        "afectos": [(j["appid"], j["nombre"], a) for a, j in con_afecto if a is not None],
     }
 
 

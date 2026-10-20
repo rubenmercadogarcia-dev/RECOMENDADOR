@@ -334,7 +334,7 @@ function mostrarVista(nombre) {
   $(".contenido").scrollTop = 0;
   if (COLECCIONES[nombre]) return abrirColeccion(nombre);
   ({ perfil: cargarPerfil, steam: cargarSteam, manual: cargarManual,
-     preguntas: cargarPreguntas, ajustes: cargarAjustes })[nombre]?.();
+     recomendaciones: cargarRecomendaciones, ajustes: cargarAjustes })[nombre]?.();
 }
 
 // ---------- Tareas largas (sincronizar / recomendar) ----------
@@ -364,7 +364,7 @@ function seguirTarea(alTerminar) {
 
 function bloquearBotones(bloquear) {
   $("#boton-sincronizar").disabled = bloquear;
-  $("#boton-recomendar").disabled = bloquear;
+  document.querySelectorAll("#boton-ver, #boton-otra-tanda, #boton-cambiar-respuestas").forEach((b) => (b.disabled = bloquear));
 }
 
 async function sincronizar() {
@@ -378,20 +378,46 @@ async function sincronizar() {
   });
 }
 
-async function recomendar() {
-  const r = await api.iniciar_recomendacion();
+let mostrados = [];        // juegos ya enseñados en esta ronda, para «Otra tanda»
+let hayResultados = false;
+
+function verResultados(ver) {
+  $("#form-preguntas").hidden = ver;
+  $("#rec-resultados").hidden = !ver;
+  $("#rec-acciones-resultados").hidden = !ver;
+  $("#rec-subtitulo").textContent = ver
+    ? "Juegos que no tienes y que encajan con lo que te gusta y con tus respuestas."
+    : "Responde lo que quieras y pulsa «Ver recomendaciones». Todo es opcional.";
+}
+
+async function recomendar(otraTanda = false) {
+  if (!otraTanda) mostrados = [];
+  const r = await api.iniciar_recomendacion(mostrados);
   if (!r.ok) return avisar(r.error, true);
+  verResultados(true);
   $("#recomendaciones-vacio").hidden = true;
   $("#recomendaciones-lista").replaceChildren();
   $("#recomendaciones-progreso").hidden = false;
+  $(".contenido").scrollTop = 0;
   seguirTarea((p) => {
     $("#recomendaciones-progreso").hidden = true;
     if (p.error) {
       $("#recomendaciones-vacio").hidden = false;
       return avisar(p.error, true);
     }
-    pintarRecomendaciones(p.resultado || []);
+    const lista = p.resultado || [];
+    mostrados.push(...lista.map((x) => x.appid));
+    hayResultados = lista.length > 0;
+    pintarRecomendaciones(lista, otraTanda);
   });
+}
+
+async function cargarRecomendaciones() {
+  const c = await api.catalogo_estado();
+  $("#rec-catalogo").textContent = c.disponible
+    ? `Buscando entre ${c.juegos.toLocaleString("es-ES")} juegos del catálogo (${c.indies.toLocaleString("es-ES")} indies), actualizado el ${new Date(c.generado).toLocaleDateString("es-ES")}.`
+    : "Aún no hay catálogo descargado: buscaré en Steam en el momento (más lento y menos preciso).";
+  if (!hayResultados) { verResultados(false); await cargarPreguntas(); }
 }
 
 // ---------- Perfil ----------
@@ -721,14 +747,16 @@ async function mover(j, carpetaId) {
 
 // ---------- Recomendaciones ----------
 
-function pintarRecomendaciones(lista) {
+function pintarRecomendaciones(lista, otraTanda = false) {
   const contenedor = $("#recomendaciones-lista");
   if (!lista.length) {
     $("#recomendaciones-vacio").hidden = false;
-    return avisar("No hay recomendaciones. Añade o puntúa más juegos, o cambia las preguntas.");
+    if (otraTanda) avisar("No quedan más recomendaciones con estas respuestas.");
+    return;
   }
   contenedor.replaceChildren(...lista.map((r) => {
-    const meta = [formatoPrecio(r.precio), r.valoracion ? `${r.valoracion}% reseñas positivas` : null].filter(Boolean).join(" · ");
+    const resenas = r.resenas ? ` de ${r.resenas.toLocaleString("es-ES")}` : "";
+    const meta = [formatoPrecio(r.precio), r.valoracion ? `${r.valoracion} % positivas${resenas}` : null].filter(Boolean).join(" · ");
     const tarjeta = el("article", { clase: "tarjeta" });
     const salir = () => { tarjeta.classList.add("saliendo"); setTimeout(() => tarjeta.remove(), 250); };
     const pendiente = el("button", {
@@ -748,6 +776,9 @@ function pintarRecomendaciones(lista) {
         el("p", { clase: "tarjeta-titulo" }, r.nombre),
         el("p", { clase: "tarjeta-meta" }, meta),
         el("p", { clase: "tarjeta-motivo" }, r.motivo),
+        el("div", { clase: "tarjeta-etiquetas" },
+          r.indie ? el("span", { clase: "indie" }, "Indie") : null,
+          ...(r.etiquetas || []).filter((t) => t !== "Indie").slice(0, 3).map((t) => el("span", {}, t))),
         el("div", { clase: "tarjeta-acciones" },
           pendiente,
           el("button", { clase: "boton secundario pequeno", onclick: () => abrir(r.url) }, "Ver en Steam"),
@@ -765,26 +796,46 @@ function pintarRecomendaciones(lista) {
 
 // ---------- Preguntas ----------
 
+// Grupo de botones: una opción (radio) o varias (multiple)
+function grupoOpciones(clave, opciones, valores, multiple) {
+  const seleccion = new Set(valores);
+  const caja = el("div", { clase: "opciones", "data-clave": clave, "data-multiple": multiple ? "1" : null, role: multiple ? "group" : "radiogroup" });
+  for (const o of opciones) {
+    caja.append(el("button", {
+      type: "button", clase: `opcion${seleccion.has(o.valor) ? " activo" : ""}`, "data-valor": o.valor,
+      "aria-pressed": seleccion.has(o.valor) ? "true" : "false",
+      onclick: (e) => {
+        const boton = e.currentTarget;
+        if (multiple) boton.classList.toggle("activo");
+        else caja.querySelectorAll(".opcion").forEach((b) => b.classList.toggle("activo", b === boton));
+        caja.querySelectorAll(".opcion").forEach((b) => b.setAttribute("aria-pressed", b.classList.contains("activo")));
+      },
+    }, o.texto));
+  }
+  return caja;
+}
+
 async function cargarPreguntas() {
   const preguntas = await api.preguntas();
   const form = $("#form-preguntas");
-  form.replaceChildren(...preguntas.map((q) => {
+  form.replaceChildren(...preguntas.map((q, i) => {
     let control;
-    if (q.opciones) {
-      control = el("div", { clase: "opciones", "data-clave": q.clave },
-        ...q.opciones.map((o) => el("button", {
-          type: "button", clase: `opcion${o === q.valor ? " activo" : ""}`, "data-valor": o,
-          onclick: (e) => {
-            e.currentTarget.parentElement.querySelectorAll(".opcion").forEach((b) => b.classList.remove("activo"));
-            e.currentTarget.classList.add("activo");
-          },
-        }, o)));
+    if (q.tipo === "filtros") {
+      control = el("div", { clase: "campos" }, ...q.campos.map((c) => el("label", {},
+        c.texto, el("input", { "data-clave": c.clave, value: c.valor, spellcheck: "false",
+                               inputmode: c.clave === "presupuesto" ? "decimal" : null }),
+        el("small", {}, c.ayuda))));
     } else {
-      control = el("input", { "data-clave": q.clave, value: q.valor, spellcheck: "false" });
+      const valores = q.tipo === "multiple" ? (q.valor || "").split(",").filter(Boolean) : [q.valor ?? ""];
+      control = grupoOpciones(q.clave, q.opciones, valores, q.tipo === "multiple");
     }
-    return el("div", { clase: "pregunta" }, el("p", {}, q.texto), control,
+    return el("div", { clase: "pregunta" },
+      el("div", { clase: "pregunta-cabecera" }, el("span", { clase: "numero" }, i + 1), el("p", {}, q.texto)),
+      control,
       q.ayuda ? el("small", { clase: "ayuda" }, q.ayuda) : null);
-  }), el("div", {}, el("button", { clase: "boton primario", type: "submit" }, "Guardar respuestas")));
+  }), el("div", { clase: "enviar-preguntas" },
+    el("button", { clase: "boton primario", type: "submit", id: "boton-ver" }, "Ver recomendaciones"),
+    el("span", { clase: "suave" }, "Tus respuestas se guardan para la próxima vez.")));
 }
 
 async function guardarPreguntas(evento) {
@@ -793,17 +844,28 @@ async function guardarPreguntas(evento) {
   document.querySelectorAll("#form-preguntas [data-clave]").forEach((nodo) => {
     if (nodo.tagName === "INPUT") respuestas[nodo.dataset.clave] = nodo.value;
     else {
-      const activa = nodo.querySelector(".opcion.activo");
-      if (activa) respuestas[nodo.dataset.clave] = activa.dataset.valor;
+      const activas = [...nodo.querySelectorAll(".opcion.activo")].map((b) => b.dataset.valor);
+      respuestas[nodo.dataset.clave] = nodo.dataset.multiple ? activas : (activas[0] ?? "");
     }
   });
   await api.guardar_preferencias(respuestas);
-  avisar("Respuestas guardadas");
+  recomendar(false);
 }
 
 // ---------- Ajustes ----------
 
 async function cargarAjustes() {
+  const ajustes = await api.ajustes_recomendador();
+  const indie = grupoOpciones("indie", ajustes.opciones_indie.map((o) => ({ valor: o, texto: o[0].toUpperCase() + o.slice(1) })), [ajustes.indie], false);
+  indie.addEventListener("click", async (e) => {
+    const boton = e.target.closest(".opcion");
+    if (!boton) return;
+    await api.guardar_preferencias({ indie: boton.dataset.valor });
+    avisar("Prioridad indie guardada");
+  });
+  $("#ajustes-indie").replaceWith(Object.assign(indie, { id: "ajustes-indie" }));
+  pintarEstadoCatalogo(await api.catalogo_estado());
+
   const estado = await api.estado();
   const panel = $("#ajustes-steam");
   if (estado.steam_conectado) {
@@ -844,6 +906,23 @@ async function cargarAjustes() {
   if (!lista.length) ul.after(el("p", { clase: "lista-vacia" }, "No has descartado ningún juego."));
 }
 
+function pintarEstadoCatalogo(c) {
+  $("#ajustes-catalogo").textContent = c.disponible
+    ? `${c.juegos.toLocaleString("es-ES")} juegos, ${c.indies.toLocaleString("es-ES")} de ellos indies. Generado el ${new Date(c.generado).toLocaleDateString("es-ES")}. Se busca una versión nueva cada semana al abrir el programa.`
+    : "Todavía no hay catálogo. Se genera en GitHub una vez al mes y el programa lo descarga solo.";
+}
+
+async function actualizarCatalogo(e) {
+  const boton = e.currentTarget;
+  boton.disabled = true;
+  boton.textContent = "Buscando…";
+  const r = await api.actualizar_catalogo();
+  boton.disabled = false;
+  boton.textContent = "Buscar actualización";
+  avisar(r.mensaje, !r.ok);
+  pintarEstadoCatalogo(r);
+}
+
 // ---------- Arranque ----------
 
 async function arrancar() {
@@ -854,7 +933,9 @@ async function arrancar() {
   document.querySelectorAll("[data-ir]").forEach((b) => b.addEventListener("click", () => mostrarVista(b.dataset.ir)));
   document.querySelectorAll(".menu-item").forEach((b) => b.addEventListener("click", () => mostrarVista(b.dataset.vista)));
   $("#boton-sincronizar").addEventListener("click", sincronizar);
-  $("#boton-recomendar").addEventListener("click", recomendar);
+  $("#boton-otra-tanda").addEventListener("click", () => recomendar(true));
+  $("#boton-cambiar-respuestas").addEventListener("click", async () => { hayResultados = false; verResultados(false); await cargarPreguntas(); });
+  $("#boton-actualizar-catalogo").addEventListener("click", actualizarCatalogo);
   $("#form-steam").addEventListener("submit", conectarSteam);
   $("#form-preguntas").addEventListener("submit", guardarPreguntas);
   $("#steam-filtro").addEventListener("input", pintarSteam);
