@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RECOMENDADOR · Descárgalo aquí (sí, AQUÍ)</title>
+  <meta name="description" content="Recomendador gratuito de videojuegos con prioridad indie. Junta tu biblioteca de Steam, puntúa tus juegos y descubre joyas indie.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --fondo: #0e0f12; --panel: #15171b; --panel-alto: #1b1e23; --borde: #272a30; --borde-fuerte: #353941;
+      --texto: #e6e7e9; --suave: #9a9fa8; --tenue: #686d76; --acento: #c4a466; --acento-texto: #16130c;
+      --flecha-1: #c4a466; --flecha-2: #ff4f4f; --flecha-3: #ffe14d; --flecha-4: #f2f2f2; --flecha-5: #ff8a3d;
+      color-scheme: dark;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; background: var(--fondo); color: var(--texto); font: 16px/1.6 Inter, system-ui, sans-serif; overflow-x: hidden; }
+    h1, h2, h3, p { margin: 0; }
+    a { color: var(--acento); }
+
+    /* ---------- Portada: la parte seria... en teoría ---------- */
+    .portada { position: relative; min-height: 100vh; min-height: 100svh; display: grid; place-items: center; padding: 96px 16px 72px; overflow: hidden; isolation: isolate; }
+    .centro { position: relative; z-index: 3; text-align: center; max-width: 640px; }
+    .marca { font-size: 12px; font-weight: 700; letter-spacing: .3em; color: var(--acento); }
+    h1 { font-size: clamp(30px, 5.4vw, 52px); line-height: 1.1; letter-spacing: -.02em; margin: 18px 0 14px; }
+    .lema { color: var(--suave); font-size: clamp(16px, 2.2vw, 19px); max-width: 520px; margin: 0 auto; }
+    /* Que el texto se lea aunque haya flechas detrás */
+    .marca, h1, .lema { text-shadow: 0 0 12px var(--fondo), 0 0 4px var(--fondo), 0 0 2px var(--fondo); }
+
+    .descargar {
+      position: relative; display: inline-flex; flex-direction: column; align-items: center; gap: 2px;
+      margin-top: 36px; padding: 20px 40px; border-radius: 12px; text-decoration: none;
+      background: var(--acento); color: var(--acento-texto); font-weight: 700; font-size: 20px;
+      box-shadow: 0 0 0 0 rgba(196, 164, 102, .6); animation: latido 1.6s ease-in-out infinite;
+      transition: transform .15s;
+    }
+    .descargar:hover { transform: scale(1.04); }
+    .descargar:focus-visible { outline: 3px solid var(--flecha-3); outline-offset: 4px; }
+    .descargar small { font-size: 13px; font-weight: 600; opacity: .75; }
+    @keyframes latido { 0%, 100% { box-shadow: 0 0 0 0 rgba(196, 164, 102, .55); } 50% { box-shadow: 0 0 0 18px rgba(196, 164, 102, 0); } }
+    .version { margin-top: 12px; font-size: 13px; color: var(--tenue); min-height: 1.6em; }
+
+    .mas-flechas {
+      margin-top: 18px; font: inherit; font-size: 13px; color: var(--suave); background: var(--fondo);
+      border: 1px dashed var(--borde-fuerte); border-radius: 999px; padding: 6px 14px; cursor: pointer;
+    }
+    .mas-flechas:hover { color: var(--texto); border-color: var(--suave); }
+    .contador { display: table; margin: 8px auto 0; font-size: 12px; color: var(--tenue); background: var(--fondo); border-radius: 6px; padding: 2px 8px; }
+    .contador:empty { display: none; }
+
+    /* ---------- Las flechas (la parte nada seria) ---------- */
+    .flechas { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+    .flecha { position: absolute; left: 0; top: 0; transform-origin: 50% 50%; will-change: transform; }
+    .flecha .cuerpo { display: block; animation: pinchar var(--vel, .9s) ease-in-out infinite; animation-delay: var(--retraso, 0s); }
+    .flecha svg { display: block; overflow: visible; filter: drop-shadow(0 3px 0 rgba(0, 0, 0, .45)); }
+    .flecha.gigante { z-index: -1; opacity: .16; }
+    .flecha.gigante svg { filter: none; }
+    @keyframes pinchar { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(var(--empuje, 14px)); } }
+    .flecha.nueva .cuerpo { animation: entrar .45s cubic-bezier(.2, 1.6, .4, 1) both, pinchar var(--vel, .9s) ease-in-out .45s infinite; }
+    @keyframes entrar { from { transform: translateX(-160px) scale(.2); opacity: 0; } to { transform: none; opacity: 1; } }
+
+    .cartel {
+      position: absolute; z-index: 2; pointer-events: none; white-space: nowrap;
+      font-family: Bangers, Impact, sans-serif; letter-spacing: .04em; line-height: 1;
+      color: var(--c, var(--flecha-3)); text-shadow: 3px 3px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+      animation: tembleque 2.4s ease-in-out infinite; animation-delay: var(--retraso, 0s);
+    }
+    @keyframes tembleque { 0%, 100% { transform: rotate(var(--giro, -6deg)) scale(1); } 50% { transform: rotate(calc(var(--giro, -6deg) * -1)) scale(1.08); } }
+
+    /* Al pasar por encima del botón, las flechas se vuelven locas */
+    body.histeria .flecha .cuerpo { --vel: .18s !important; --empuje: 22px; }
+    body.histeria .cartel { animation-duration: .3s; }
+    body.celebracion .cartel { color: #7dff9a; }
+
+    /* ---------- Resto de la página: sobria de verdad ---------- */
+    section.bloque { max-width: 1040px; margin: 0 auto; padding: 72px 16px; border-top: 1px solid var(--borde); }
+    .bloque h2 { font-size: 13px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--suave); margin-bottom: 28px; }
+    .rejilla { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .tarjeta { background: var(--panel); border: 1px solid var(--borde); border-radius: 10px; padding: 22px; }
+    .tarjeta h3 { font-size: 17px; margin-bottom: 8px; }
+    .tarjeta p { color: var(--suave); font-size: 15px; }
+    .pasos { counter-reset: paso; display: grid; gap: 14px; max-width: 720px; padding: 0; margin: 0; list-style: none; }
+    .pasos li { counter-increment: paso; display: grid; grid-template-columns: 40px 1fr; gap: 14px; align-items: start;
+      background: var(--panel); border: 1px solid var(--borde); border-radius: 10px; padding: 18px; }
+    .pasos li::before { content: counter(paso); display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%;
+      background: var(--panel-alto); border: 1px solid var(--borde-fuerte); color: var(--acento); font-weight: 700; }
+    .pasos strong { display: block; margin-bottom: 2px; }
+    .pasos span { color: var(--suave); font-size: 15px; }
+    details { background: var(--panel); border: 1px solid var(--borde); border-radius: 10px; padding: 16px 20px; max-width: 720px; }
+    details + details { margin-top: 10px; }
+    summary { cursor: pointer; font-weight: 600; }
+    details p { color: var(--suave); margin-top: 10px; font-size: 15px; }
+    code { background: var(--panel-alto); padding: 1px 6px; border-radius: 4px; font-size: 14px; }
+    footer { max-width: 1040px; margin: 0 auto; padding: 40px 16px 56px; border-top: 1px solid var(--borde); color: var(--tenue); font-size: 14px;
+      display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    .volver { text-decoration: none; }
+
+    @media (max-width: 760px) {
+      .rejilla { grid-template-columns: 1fr; }
+      .descargar { padding: 18px 26px; font-size: 18px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .descargar, .flecha .cuerpo, .cartel { animation: none !important; }
+      html { scroll-behavior: auto; }
+    }
+  </style>
+</head>
+<body>
+  <header class="portada" id="arriba">
+    <div class="flechas" id="flechas" aria-hidden="true"></div>
+    <div class="centro">
+      <p class="marca">RECOMENDADOR</p>
+      <h1>Descubre tu próximo juego favorito</h1>
+      <p class="lema">Junta tu biblioteca de Steam y los juegos que añadas a mano, puntúalos, y deja que te recomiende joyas indie. Gratis, sin cuentas y sin IA de pago.</p>
+      <a class="descargar" id="descargar"
+         href="https://github.com/rubenmercadogarcia-dev/RECOMENDADOR/releases/latest/download/RECOMENDADOR.exe">
+        Descargar para Windows
+        <small>RECOMENDADOR.exe · gratis · Windows 10 y 11</small>
+      </a>
+      <p class="version" id="version"></p>
+      <button class="mas-flechas" id="mas-flechas" type="button">No veo el botón, pon más flechas</button>
+      <span class="contador" id="contador" aria-live="polite"></span>
+    </div>
+  </header>
+
+  <main>
+    <section class="bloque">
+      <h2>Qué hace</h2>
+      <div class="rejilla">
+        <article class="tarjeta">
+          <h3>Tus bibliotecas</h3>
+          <p>Importa tus juegos y horas de Steam, o añade a mano los de consola y otras tiendas. Puntúalos con estrellas: tu nota manda sobre las horas.</p>
+        </article>
+        <article class="tarjeta">
+          <h3>Tus colecciones</h3>
+          <p>Pendientes y completados con carpetas, y platinos. Con portadas verticales, como la biblioteca de Steam.</p>
+        </article>
+        <article class="tarjeta">
+          <h3>Recomendaciones indie</h3>
+          <p>Diez preguntas opcionales y un catálogo de miles de juegos. Cada recomendación te dice por qué: «Porque te gustó Hollow Knight…».</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="bloque">
+      <h2>Cómo se instala</h2>
+      <ol class="pasos">
+        <li><div><strong>Descarga RECOMENDADOR.exe</strong><span>Con el botón de arriba. Sí, ese. El de las flechas.</span></div></li>
+        <li><div><strong>Ábrelo</strong><span>No hay que instalar nada. Si Windows dice «Windows protegió su PC», pulsa <em>Más información</em> → <em>Ejecutar de todas formas</em>. Pasa con los programas pequeños que no están firmados.</span></div></li>
+        <li><div><strong>Añade tus juegos</strong><span>Conecta Steam (opcional) o añade juegos a mano, puntúalos y pide recomendaciones.</span></div></li>
+      </ol>
+    </section>
+
+    <section class="bloque">
+      <h2>Preguntas</h2>
+      <details>
+        <summary>¿Es gratis de verdad?</summary>
+        <p>Sí. No hay suscripciones, anuncios ni IA de pago. El catálogo de juegos se genera gratis en GitHub una vez al mes.</p>
+      </details>
+      <details>
+        <summary>¿Necesito una cuenta de Steam?</summary>
+        <p>No. Con Steam importas tu biblioteca automáticamente (hace falta una API key gratuita de Steam), pero puedes usarlo solo con la biblioteca manual.</p>
+      </details>
+      <details>
+        <summary>¿Dónde se guardan mis datos?</summary>
+        <p>Solo en tu ordenador, en <code>%APPDATA%\Recomendador</code>. No se envía nada a ningún servidor propio.</p>
+      </details>
+      <details>
+        <summary>¿Por qué hay tantas flechas?</summary>
+        <p>Por si acaso.</p>
+      </details>
+    </section>
+  </main>
+
+  <footer>
+    <span>Hecho por Rubén Mercado García · Código abierto en <a href="https://github.com/rubenmercadogarcia-dev/RECOMENDADOR">GitHub</a></span>
+    <a class="volver" href="#arriba">Volver al botón ↑</a>
+  </footer>
+
+  <script>
+    // ---------- Formas de flecha (todas dibujadas apuntando a la derecha) ----------
+    const FORMAS = [
+      // Flecha gorda de bloque
+      (c) => `<svg viewBox="0 0 120 60" width="120" height="60"><path d="M4 20 H72 V4 L116 30 L72 56 V40 H4 Z" fill="${c}" stroke="#000" stroke-width="4" stroke-linejoin="round"/></svg>`,
+      // Flecha dibujada a mano, curvita
+      (c) => `<svg viewBox="0 0 140 70" width="140" height="70"><path d="M6 52 C40 70 70 10 124 34" fill="none" stroke="${c}" stroke-width="9" stroke-linecap="round"/><path d="M100 14 L128 35 L98 52" fill="none" stroke="${c}" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+      // Flecha fina con punta enorme
+      (c) => `<svg viewBox="0 0 130 50" width="130" height="50"><path d="M4 25 H82" stroke="${c}" stroke-width="7" stroke-linecap="round"/><path d="M78 4 L126 25 L78 46 Z" fill="${c}" stroke="#000" stroke-width="3" stroke-linejoin="round"/></svg>`,
+      // Triple flecha de cómic
+      (c) => `<svg viewBox="0 0 120 60" width="120" height="60"><g fill="${c}" stroke="#000" stroke-width="3" stroke-linejoin="round"><path d="M6 8 L36 30 L6 52 Z"/><path d="M42 8 L72 30 L42 52 Z"/><path d="M78 8 L114 30 L78 52 Z"/></g></svg>`,
+      // Flecha en zigzag (porque sí)
+      (c) => `<svg viewBox="0 0 150 60" width="150" height="60"><path d="M4 30 L28 12 L52 48 L76 12 L100 40" fill="none" stroke="${c}" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/><path d="M92 18 L144 34 L98 58 Z" fill="${c}" stroke="#000" stroke-width="3" stroke-linejoin="round"/></svg>`,
+    ];
+    const COLORES = ["var(--flecha-1)", "var(--flecha-2)", "var(--flecha-3)", "var(--flecha-4)", "var(--flecha-5)"];
+    const CARTELES = ["¡AQUÍ!", "ESTE", "¡DESCARGA!", "SÍ, ESE", "¿LO VES?", "¡¡GRATIS!!", "CLIC AQUÍ", "EL BOTÓN DORADO",
+      "NO TIENE PÉRDIDA", "PROMETIDO", "¡ÉSE DE AHÍ!", "LITERALMENTE AQUÍ", "↓ ↓ ↓", "¡PÚLSALO!", "100% BOTÓN",
+      "NO MUERDE", "¡VAMOS!", "OJO AQUÍ", "¡¡ESTE!!", "MIRA ↓", "EN SERIO", "BOTÓN OFICIAL"];
+
+    const capa = document.getElementById("flechas");
+    const portada = document.querySelector(".portada");
+    const boton = document.getElementById("descargar");
+    const contador = document.getElementById("contador");
+    let flechas = [];
+    let extra = 0;
+    const azar = (a, b) => a + Math.random() * (b - a);
+    const elegir = (lista) => lista[Math.floor(Math.random() * lista.length)];
+
+    function centroBoton() {
+      const p = portada.getBoundingClientRect(), b = boton.getBoundingClientRect();
+      return { x: b.left - p.left + b.width / 2, y: b.top - p.top + b.height / 2, w: b.width, h: b.height };
+    }
+
+    // Busca un sitio que no tape el botón ni el texto
+    function sitioLibre(ancho, alto, zonasProhibidas) {
+      for (let i = 0; i < 40; i++) {
+        const x = azar(-40, ancho + 40), y = azar(-20, alto + 20);
+        if (!zonasProhibidas.some((z) => x > z.x1 && x < z.x2 && y > z.y1 && y < z.y2)) return { x, y };
+      }
+      return { x: azar(0, ancho), y: azar(0, alto) };
+    }
+
+    function zonas() {
+      const p = portada.getBoundingClientRect();
+      const r = (el, margen) => { const b = el.getBoundingClientRect();
+        return { x1: b.left - p.left - margen, x2: b.right - p.left + margen, y1: b.top - p.top - margen, y2: b.bottom - p.top + margen }; };
+      return [r(boton, 70), r(document.querySelector("h1"), 10), r(document.querySelector(".lema"), 8),
+              r(document.getElementById("mas-flechas"), 16), r(contador, 10)];
+    }
+
+    function apuntar(f) {
+      const c = centroBoton();
+      const angulo = Math.atan2(c.y - f.y, c.x - f.x) * 180 / Math.PI;
+      f.nodo.style.transform = `translate(${f.x - f.ancho / 2}px, ${f.y - f.alto / 2}px) rotate(${angulo}deg) scale(${f.escala})`;
+    }
+
+    function crearFlecha({ gigante = false, nueva = false } = {}) {
+      const p = portada.getBoundingClientRect();
+      const { x, y } = sitioLibre(p.width, p.height, gigante ? [] : zonas());
+      const forma = Math.floor(Math.random() * FORMAS.length);
+      const nodo = document.createElement("div");
+      nodo.className = `flecha${gigante ? " gigante" : ""}${nueva ? " nueva" : ""}`;
+      const pequeña = window.innerWidth < 760;
+      const escala = gigante ? azar(2.4, 4) : azar(pequeña ? .35 : .45, pequeña ? .8 : 1.25);
+      nodo.innerHTML = `<span class="cuerpo">${FORMAS[forma](elegir(COLORES))}</span>`;
+      const cuerpo = nodo.firstElementChild;
+      cuerpo.style.setProperty("--vel", `${azar(.55, 1.2).toFixed(2)}s`);
+      cuerpo.style.setProperty("--retraso", `${azar(-1, 0).toFixed(2)}s`);
+      cuerpo.style.setProperty("--empuje", `${Math.round(azar(8, 22))}px`);
+      capa.appendChild(nodo);
+      const svg = nodo.querySelector("svg");
+      const f = { nodo, x, y, escala, ancho: +svg.getAttribute("width"), alto: +svg.getAttribute("height") };
+      apuntar(f);
+      flechas.push(f);
+    }
+
+    function crearCartel() {
+      const p = portada.getBoundingClientRect();
+      const { x, y } = sitioLibre(p.width - 160, p.height - 40, zonas());
+      const nodo = document.createElement("div");
+      nodo.className = "cartel";
+      nodo.textContent = elegir(CARTELES);
+      nodo.style.left = `${Math.max(8, x)}px`;
+      nodo.style.top = `${Math.max(8, y)}px`;
+      nodo.style.fontSize = `${Math.round(azar(18, window.innerWidth < 760 ? 30 : 44))}px`;
+      nodo.style.setProperty("--c", elegir(COLORES));
+      nodo.style.setProperty("--giro", `${azar(-12, 12).toFixed(1)}deg`);
+      nodo.style.setProperty("--retraso", `${azar(-2, 0).toFixed(2)}s`);
+      capa.appendChild(nodo);
+    }
+
+    function contar() {
+      const n = flechas.length;
+      const comentarios = [[0, ""], [60, "Ahora sí lo ves, ¿no?"], [100, "Vale, esto ya es demasiado."],
+        [160, "Las flechas tienen sindicato y están protestando."], [240, "Has roto la página. Enhorabuena."]];
+      const comentario = comentarios.filter(([min]) => extra > 0 && n >= min).pop()?.[1] || "";
+      contador.textContent = `${n} flechas apuntando al botón${comentario ? " · " + comentario : ""}`;
+    }
+
+    function dibujarTodo() {
+      capa.replaceChildren();
+      flechas = [];
+      const pequeña = window.innerWidth < 760;
+      const normales = (pequeña ? 18 : 42) + extra;
+      for (let i = 0; i < (pequeña ? 2 : 4); i++) crearFlecha({ gigante: true });
+      for (let i = 0; i < normales; i++) crearFlecha();
+      for (let i = 0; i < (pequeña ? 5 : 11); i++) crearCartel();
+      contar();
+    }
+
+    document.getElementById("mas-flechas").addEventListener("click", () => {
+      extra += 12;
+      for (let i = 0; i < 12; i++) crearFlecha({ nueva: true });
+      if (Math.random() < .7) crearCartel();
+      contar();
+    });
+    boton.addEventListener("mouseenter", () => document.body.classList.add("histeria"));
+    boton.addEventListener("mouseleave", () => document.body.classList.remove("histeria"));
+    boton.addEventListener("click", () => {
+      document.body.classList.add("celebracion");
+      contador.textContent = "¡ESO ES! Las flechas están muy orgullosas de ti.";
+    });
+
+    let temporizador;
+    window.addEventListener("resize", () => { clearTimeout(temporizador); temporizador = setTimeout(dibujarTodo, 150); });
+    document.fonts?.ready.then(dibujarTodo);
+    dibujarTodo();
+
+    // Versión publicada (si GitHub responde)
+    fetch("https://api.github.com/repos/rubenmercadogarcia-dev/RECOMENDADOR/releases/latest")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((rel) => {
+        const exe = (rel.assets || []).find((a) => a.name.endsWith(".exe"));
+        const fecha = new Date(rel.published_at).toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" });
+        document.getElementById("version").textContent =
+          `Versión ${rel.tag_name} · ${fecha}${exe ? ` · ${(exe.size / 1048576).toFixed(0)} MB` : ""}`;
+      })
+      .catch(() => {});
+  </script>
+</body>
+</html>

@@ -2,7 +2,7 @@
 
 Recomendador de videojuegos **gratuito**. Junta tu biblioteca de Steam y los juegos que añadas a mano (también de consola u otras tiendas), aprende de tus notas y de tus horas de juego, te hace unas preguntas y te recomienda juegos que **no tienes**, explicando el porqué. No hace falta pagar nada.
 
-> 🚧 **Estado: v0.5 en desarrollo.** Próximo paso: empaquetarlo como `.exe` y publicarlo en *Releases*.
+> 🚧 **Estado: v0.5.** Primera versión publicada. Se aceptan sugerencias.
 
 ## Qué hace
 
@@ -30,7 +30,13 @@ Recomendador de videojuegos **gratuito**. Junta tu biblioteca de Steam y los jue
 
 `herramientas/generar_catalogo.py` descarga de SteamSpy los juegos bien valorados con sus etiquetas. Lo ejecuta **GitHub Actions** el día 1 de cada mes (`.github/workflows/catalogo.yml`) y lo guarda en `datos/catalogo.json.gz`. El programa busca una versión nueva una vez a la semana. Si no hay catálogo, busca en SteamSpy en el momento (más lento).
 
-## Requisitos
+## Descargar
+
+👉 **[Descargar RECOMENDADOR.exe](https://github.com/rubenmercadogarcia-dev/RECOMENDADOR/releases/latest/download/RECOMENDADOR.exe)** (Windows 10 y 11) · [Página web](https://rubenmercadogarcia-dev.github.io/RECOMENDADOR/)
+
+Para publicar una versión nueva basta con crear y subir una etiqueta (`git tag v1.0.0 && git push origin v1.0.0`): GitHub construye el `.exe`, comprueba que arranca y lo publica en *Releases* (`.github/workflows/publicar.yml`).
+
+## Requisitos para ejecutarlo desde el código
 
 - Python 3.10 o superior
 - *(Opcional, para importar tu biblioteca de Steam)* Una **API key de Steam** gratuita (https://steamcommunity.com/dev/apikey) y tu **perfil público**, incluidos los *Detalles de juego* (Perfil → Editar perfil → Privacidad)
@@ -84,5 +90,5 @@ La clave de Steam y la base de datos se guardan **fuera del proyecto**:
 - [x] v0.3 – Biblioteca manual, puntuaciones y sin claves de pago
 - [x] v0.4 – Colecciones: pendientes y completados con carpetas, y platinos
 - [x] v0.5 – Catálogo propio con prioridad indie, recomendador nuevo y 10 preguntas
-- [ ] Empaquetar como `.exe` con PyInstaller y publicarlo en *Releases*
-- [ ] Página web de presentación con botón de descarga
+- [x] `.exe` construido automáticamente en GitHub y publicado en *Releases*
+- [x] Página web con botón de descarga (y demasiadas flechas)
