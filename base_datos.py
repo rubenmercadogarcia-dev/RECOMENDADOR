@@ -1,5 +1,6 @@
 """Base de datos SQLite con tus juegos, etiquetas y preferencias."""
 import sqlite3
+import time
 
 from configuracion import carpeta_datos
 
@@ -29,6 +30,22 @@ CREATE TABLE IF NOT EXISTS preferencias (
 CREATE TABLE IF NOT EXISTS descartados (
     appid INTEGER PRIMARY KEY,
     nombre TEXT
+);
+-- Carpetas de las colecciones (solo pendientes y completados tienen)
+CREATE TABLE IF NOT EXISTS carpetas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    seccion TEXT NOT NULL,
+    nombre TEXT NOT NULL COLLATE NOCASE,   -- «Coop» y «coop» cuentan como la misma
+    UNIQUE (seccion, nombre)
+);
+-- Juegos en colecciones: pendientes, completados y platinos
+CREATE TABLE IF NOT EXISTS coleccion (
+    seccion TEXT NOT NULL,
+    appid INTEGER NOT NULL,
+    nombre TEXT,
+    carpeta_id INTEGER,          -- vacío = sin carpeta
+    fecha INTEGER,               -- cuándo lo añadiste
+    PRIMARY KEY (seccion, appid)
 );
 """
 
@@ -80,7 +97,8 @@ def juego(con, appid: int):
 
 def nuevo_id_sin_steam(con) -> int:
     """Los juegos que no están en Steam usan identificadores negativos."""
-    minimo = con.execute("SELECT MIN(appid) FROM juegos").fetchone()[0] or 0
+    minimo = con.execute("SELECT MIN(m) FROM (SELECT MIN(appid) AS m FROM juegos "
+                         "UNION ALL SELECT MIN(appid) FROM coleccion)").fetchone()[0] or 0
     return min(minimo, 0) - 1
 
 
@@ -120,7 +138,8 @@ def puntuar(con, appid: int, nota: int | None) -> None:
 
 
 def appids_poseidos(con) -> set[int]:
-    return {r[0] for r in con.execute("SELECT appid FROM juegos")}
+    """Todo lo que no hay que recomendarte: tus bibliotecas y tus colecciones."""
+    return {r[0] for r in con.execute("SELECT appid FROM juegos UNION SELECT appid FROM coleccion")}
 
 
 def tiene_etiquetas(con, appid: int) -> bool:
@@ -161,3 +180,126 @@ def recuperar(con, appid: int) -> None:
 
 def descartados(con) -> dict[int, str]:
     return {r["appid"]: r["nombre"] for r in con.execute("SELECT * FROM descartados")}
+
+
+# ---------- Colecciones ----------
+
+SECCIONES = ("pendientes", "completados", "platinos")
+CON_CARPETAS = ("pendientes", "completados")
+
+
+def _validar(seccion: str) -> None:
+    if seccion not in SECCIONES:
+        raise ValueError(f"Sección desconocida: {seccion}")
+
+
+def carpetas(con, seccion: str) -> list[sqlite3.Row]:
+    _validar(seccion)
+    return con.execute("""
+        SELECT c.id, c.nombre, COUNT(j.appid) AS total
+        FROM carpetas c LEFT JOIN coleccion j ON j.carpeta_id = c.id AND j.seccion = c.seccion
+        WHERE c.seccion=? GROUP BY c.id ORDER BY c.nombre COLLATE NOCASE""", (seccion,)).fetchall()
+
+
+def crear_carpeta(con, seccion: str, nombre: str) -> int:
+    _validar(seccion)
+    nombre = (nombre or "").strip()
+    if seccion not in CON_CARPETAS:
+        raise ValueError("Esta colección no tiene carpetas.")
+    if not nombre:
+        raise ValueError("Escribe un nombre para la carpeta.")
+    try:
+        cur = con.execute("INSERT INTO carpetas (seccion, nombre) VALUES (?, ?)", (seccion, nombre))
+    except sqlite3.IntegrityError:
+        raise ValueError(f"Ya tienes una carpeta llamada «{nombre}».") from None
+    con.commit()
+    return cur.lastrowid
+
+
+def renombrar_carpeta(con, carpeta_id: int, nombre: str) -> None:
+    nombre = (nombre or "").strip()
+    if not nombre:
+        raise ValueError("Escribe un nombre para la carpeta.")
+    try:
+        con.execute("UPDATE carpetas SET nombre=? WHERE id=?", (nombre, carpeta_id))
+    except sqlite3.IntegrityError:
+        raise ValueError(f"Ya tienes una carpeta llamada «{nombre}».") from None
+    con.commit()
+
+
+def borrar_carpeta(con, carpeta_id: int) -> None:
+    """Borra la carpeta; sus juegos se quedan en la colección, sin carpeta."""
+    con.execute("UPDATE coleccion SET carpeta_id=NULL WHERE carpeta_id=?", (carpeta_id,))
+    con.execute("DELETE FROM carpetas WHERE id=?", (carpeta_id,))
+    con.commit()
+
+
+def _carpeta_valida(con, seccion: str, carpeta_id) -> int | None:
+    if carpeta_id in (None, "", 0):
+        return None
+    fila = con.execute("SELECT seccion FROM carpetas WHERE id=?", (int(carpeta_id),)).fetchone()
+    if fila is None or fila["seccion"] != seccion:
+        raise ValueError("Esa carpeta no existe en esta colección.")
+    return int(carpeta_id)
+
+
+def anadir_a_coleccion(con, seccion: str, appid: int, nombre: str, carpeta_id=None) -> None:
+    """Reglas: un platino también cuenta como completado, y al completar
+    un juego sale de tus pendientes."""
+    _validar(seccion)
+    carpeta_id = _carpeta_valida(con, seccion, carpeta_id) if seccion in CON_CARPETAS else None
+    ahora = int(time.time())
+    con.execute("""
+        INSERT INTO coleccion (seccion, appid, nombre, carpeta_id, fecha) VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(seccion, appid) DO UPDATE SET carpeta_id=excluded.carpeta_id
+    """, (seccion, appid, nombre, carpeta_id, ahora))
+    if seccion in ("completados", "platinos"):
+        con.execute("DELETE FROM coleccion WHERE seccion='pendientes' AND appid=?", (appid,))
+    if seccion == "platinos":
+        con.execute("""INSERT OR IGNORE INTO coleccion (seccion, appid, nombre, carpeta_id, fecha)
+                       VALUES ('completados', ?, ?, NULL, ?)""", (appid, nombre, ahora))
+    con.commit()
+
+
+def mover_a_carpeta(con, seccion: str, appid: int, carpeta_id) -> None:
+    carpeta_id = _carpeta_valida(con, seccion, carpeta_id)
+    con.execute("UPDATE coleccion SET carpeta_id=? WHERE seccion=? AND appid=?",
+                (carpeta_id, seccion, appid))
+    con.commit()
+
+
+def quitar_de_coleccion(con, seccion: str, appid: int) -> None:
+    """Si quitas un juego de completados, deja de ser platino también."""
+    _validar(seccion)
+    con.execute("DELETE FROM coleccion WHERE seccion=? AND appid=?", (seccion, appid))
+    if seccion == "completados":
+        con.execute("DELETE FROM coleccion WHERE seccion='platinos' AND appid=?", (appid,))
+    con.commit()
+
+
+def coleccion(con, seccion: str) -> list[sqlite3.Row]:
+    """Juegos de una colección, con su nota (si está en tu biblioteca) y si es platino."""
+    _validar(seccion)
+    return con.execute("""
+        SELECT c.appid, c.nombre, c.carpeta_id, c.fecha, j.nota,
+               (j.appid IS NOT NULL) AS en_biblioteca,
+               EXISTS (SELECT 1 FROM coleccion p WHERE p.seccion='platinos' AND p.appid=c.appid) AS platino,
+               EXISTS (SELECT 1 FROM coleccion p WHERE p.seccion='completados' AND p.appid=c.appid) AS completado
+        FROM coleccion c LEFT JOIN juegos j ON j.appid = c.appid
+        WHERE c.seccion=? ORDER BY c.fecha DESC, c.nombre COLLATE NOCASE""", (seccion,)).fetchall()
+
+
+def estados_coleccion(con) -> dict[int, str]:
+    """{appid: 'platino' | 'completado'} para el perfil."""
+    estados = {}
+    for r in con.execute("SELECT appid, seccion FROM coleccion WHERE seccion IN ('completados', 'platinos')"):
+        if r["seccion"] == "platinos" or r["appid"] not in estados:
+            estados[r["appid"]] = "platino" if r["seccion"] == "platinos" else "completado"
+    return estados
+
+
+def resumen_colecciones(con) -> dict[str, int]:
+    totales = dict.fromkeys(SECCIONES, 0)
+    for r in con.execute("SELECT seccion, COUNT(*) AS n FROM coleccion GROUP BY seccion"):
+        totales[r["seccion"]] = r["n"]
+    return totales

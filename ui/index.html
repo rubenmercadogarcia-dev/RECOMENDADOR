@@ -15,6 +15,10 @@
         <p class="menu-grupo">Biblioteca</p>
         <button class="menu-item" data-vista="steam">Steam</button>
         <button class="menu-item" data-vista="manual">Manual</button>
+        <p class="menu-grupo">Colecciones</p>
+        <button class="menu-item" data-vista="pendientes">Pendientes <span class="menu-cuenta" data-cuenta="pendientes"></span></button>
+        <button class="menu-item" data-vista="completados">Completados <span class="menu-cuenta" data-cuenta="completados"></span></button>
+        <button class="menu-item" data-vista="platinos">Platinos <span class="menu-cuenta" data-cuenta="platinos"></span></button>
         <p class="menu-grupo">Descubrir</p>
         <button class="menu-item" data-vista="recomendaciones">Recomendaciones</button>
         <button class="menu-item" data-vista="preguntas">Preguntas</button>
@@ -106,24 +110,25 @@
           <h1>Biblioteca manual</h1>
           <p class="suave">Añade juegos de cualquier sitio y puntúalos. Cuanto más puntúes, mejores recomendaciones.</p>
         </header>
-        <div class="buscador">
-          <input id="buscador" placeholder="Busca un juego en Steam para añadirlo…" spellcheck="false" autocomplete="off">
-          <ul id="resultados" class="resultados" hidden></ul>
-        </div>
-        <details class="sin-steam">
-          <summary>¿No está en Steam? Añádelo solo con el nombre</summary>
-          <form id="form-sin-steam" class="fila-formulario" autocomplete="off">
-            <input name="nombre" placeholder="Nombre del juego" spellcheck="false" required>
-            <button class="boton secundario" type="submit">Añadir</button>
-          </form>
-          <small class="suave">Sin portada ni etiquetas: cuenta menos para el recomendador, pero no te lo volverá a sugerir.</small>
-        </details>
+        <div id="manual-buscador"></div>
         <p id="manual-recuento" class="recuento"></p>
         <div class="rejilla" id="manual-lista"></div>
         <div id="manual-vacio" class="vacio" hidden>
           <p>Todavía no has añadido ningún juego.</p>
           <p class="suave">Usa el buscador de arriba.</p>
         </div>
+      </section>
+
+      <!-- Colecciones: una sola vista para Pendientes, Completados y Platinos -->
+      <section class="vista" id="vista-coleccion" hidden>
+        <header class="cabecera">
+          <h1 id="coleccion-titulo"></h1>
+          <p class="suave" id="coleccion-subtitulo"></p>
+        </header>
+        <div id="coleccion-buscador"></div>
+        <div id="coleccion-carpetas" class="carpetas"></div>
+        <div id="coleccion-lista" class="capsulas"></div>
+        <div id="coleccion-vacio" class="vacio" hidden></div>
       </section>
 
       <!-- Recomendaciones -->

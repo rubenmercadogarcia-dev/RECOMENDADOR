@@ -173,8 +173,8 @@ class Api:
         finally:
             con.close()
 
-    def buscar_juego(self, texto):
-        """Busca en la tienda de Steam para añadir un juego a mano."""
+    def buscar_juego(self, texto, seccion="manual"):
+        """Busca en la tienda de Steam para añadir un juego a mano o a una colección."""
         texto = (texto or "").strip()
         if len(texto) < 2:
             return {"ok": True, "resultados": []}
@@ -184,12 +184,15 @@ class Api:
             return {"ok": False, "error": f"No se pudo buscar en Steam: {e}"}
         con = self._con()
         try:
-            manuales = {j["appid"] for j in bd.juegos(con, "manual")}
+            if seccion == "manual":
+                ya = {j["appid"] for j in bd.juegos(con, "manual")}
+            else:
+                ya = {r["appid"] for r in bd.coleccion(con, seccion)}
         finally:
             con.close()
         return {"ok": True, "resultados": [
             {"appid": i["id"], "nombre": i["name"], "imagen": i.get("tiny_image", ""),
-             "anadido": i["id"] in manuales}
+             "anadido": i["id"] in ya}
             for i in items if i.get("id")][:10]}
 
     def anadir_manual(self, appid, nombre, nota=None):
@@ -226,15 +229,97 @@ class Api:
             con.close()
         return {"ok": True}
 
-    def puntuar(self, appid, nota):
+    def puntuar(self, appid, nota, nombre=None):
+        """Si el juego aún no está en ninguna biblioteca (por ejemplo, un completado
+        que añadiste desde Colecciones), se añade a la biblioteca manual."""
+        try:
+            nota = int(nota) if nota else None
+            appid = int(appid)
+        except (TypeError, ValueError):
+            return {"ok": False, "error": "Nota no válida."}
         con = self._con()
         try:
-            bd.puntuar(con, int(appid), int(nota) if nota else None)
+            if bd.juego(con, appid) is None:
+                if not nota:
+                    return {"ok": True}
+                if not nombre:
+                    return {"ok": False, "error": "No encuentro ese juego."}
+                bd.anadir_manual(con, appid, nombre)
+            bd.puntuar(con, appid, nota)
             if nota:
                 self._etiquetar(con, appid)
+        except ValueError as e:
+            return {"ok": False, "error": str(e)}
         finally:
             con.close()
         return {"ok": True}
+
+    # ---------- colecciones: pendientes, completados y platinos ----------
+
+    def _con_errores(self, funcion):
+        """Ejecuta una operación y convierte los errores en un mensaje para la ventana."""
+        con = self._con()
+        try:
+            resultado = funcion(con)
+            return {"ok": True, **(resultado or {})}
+        except ValueError as e:
+            return {"ok": False, "error": str(e)}
+        finally:
+            con.close()
+
+    def colecciones_resumen(self):
+        con = self._con()
+        try:
+            return bd.resumen_colecciones(con)
+        finally:
+            con.close()
+
+    def coleccion(self, seccion):
+        con = self._con()
+        try:
+            carpetas = ([{"id": c["id"], "nombre": c["nombre"], "total": c["total"]}
+                         for c in bd.carpetas(con, seccion)] if seccion in bd.CON_CARPETAS else [])
+            juegos = [{"appid": r["appid"], "nombre": r["nombre"], "carpeta_id": r["carpeta_id"],
+                       "nota": r["nota"], "en_biblioteca": bool(r["en_biblioteca"]),
+                       "platino": bool(r["platino"]), "completado": bool(r["completado"])}
+                      for r in bd.coleccion(con, seccion)]
+            return {"carpetas": carpetas, "juegos": juegos,
+                    "con_carpetas": seccion in bd.CON_CARPETAS}
+        finally:
+            con.close()
+
+    def crear_carpeta(self, seccion, nombre):
+        return self._con_errores(lambda con: {"id": bd.crear_carpeta(con, seccion, nombre)})
+
+    def renombrar_carpeta(self, carpeta_id, nombre):
+        return self._con_errores(lambda con: bd.renombrar_carpeta(con, int(carpeta_id), nombre))
+
+    def borrar_carpeta(self, carpeta_id):
+        return self._con_errores(lambda con: bd.borrar_carpeta(con, int(carpeta_id)))
+
+    def anadir_a_coleccion(self, seccion, appid, nombre, carpeta_id=None):
+        def operacion(con):
+            bd.anadir_a_coleccion(con, seccion, int(appid), nombre, carpeta_id)
+            if seccion in ("completados", "platinos"):
+                self._etiquetar(con, appid)
+        return self._con_errores(operacion)
+
+    def anadir_sin_steam_a_coleccion(self, seccion, nombre, carpeta_id=None):
+        nombre = (nombre or "").strip()
+        if not nombre:
+            return {"ok": False, "error": "Escribe el nombre del juego."}
+
+        def operacion(con):
+            appid = bd.nuevo_id_sin_steam(con)
+            bd.anadir_a_coleccion(con, seccion, appid, nombre, carpeta_id)
+            return {"appid": appid}
+        return self._con_errores(operacion)
+
+    def mover_a_carpeta(self, seccion, appid, carpeta_id):
+        return self._con_errores(lambda con: bd.mover_a_carpeta(con, seccion, int(appid), carpeta_id))
+
+    def quitar_de_coleccion(self, seccion, appid):
+        return self._con_errores(lambda con: bd.quitar_de_coleccion(con, seccion, int(appid)))
 
     # ---------- perfil, preguntas y descartes ----------
 
@@ -243,12 +328,15 @@ class Api:
         try:
             p = mod_perfil.construir(con)
             minutos_totales = sum(j["minutos"] for j in bd.juegos(con))
+            colecciones = bd.resumen_colecciones(con)
         finally:
             con.close()
         maximo = p["etiquetas"][0][1] if p["etiquetas"] else 1
         return {
             "total": p["total"],
             "puntuados": p["puntuados"],
+            "completados": colecciones["completados"],
+            "platinos": colecciones["platinos"],
             "favoritos": [_juego_para_ui(j) for j in p["favoritos"]],
             "recientes": [_juego_para_ui(j) for j in p["recientes"]],
             "abandonados": len(p["abandonados"]),

@@ -123,10 +123,77 @@ def test_flujo_completo():
             mp.deshacer()
 
 
+def test_colecciones_desde_la_ventana():
+    mp = _MonkeyPatch()
+    with tempfile.TemporaryDirectory() as carpeta:
+        try:
+            api = preparar(mp, carpeta)
+            mp.setattr(steam_api, "buscar_tienda", lambda texto: [
+                {"id": 588650, "name": "Dead Cells"}, {"id": 2379780, "name": "Balatro"}])
+
+            r = api.crear_carpeta("pendientes", "Cooperativo")
+            assert r["ok"] and isinstance(r["id"], int)
+            coop = r["id"]
+            assert api.crear_carpeta("pendientes", "COOPERATIVO")["ok"] is False   # no distingue mayúsculas
+            assert api.crear_carpeta("platinos", "x")["ok"] is False
+            assert api.anadir_a_coleccion("inventada", 1, "x")["ok"] is False
+
+            assert api.anadir_a_coleccion("pendientes", 588650, "Dead Cells", coop)["ok"]
+            assert api.anadir_a_coleccion("pendientes", 2379780, "Balatro", None)["ok"]
+            assert api.anadir_sin_steam_a_coleccion("pendientes", "  ", None)["ok"] is False
+            astro = api.anadir_sin_steam_a_coleccion("pendientes", "Astro Bot", coop)["appid"]
+            assert astro < 0
+            datos = api.coleccion("pendientes")
+            assert datos["con_carpetas"] and datos["carpetas"] == [{"id": coop, "nombre": "Cooperativo", "total": 2}]
+            assert {j["nombre"]: j["carpeta_id"] for j in datos["juegos"]} == {
+                "Dead Cells": coop, "Balatro": None, "Astro Bot": coop}
+            assert [x["anadido"] for x in api.buscar_juego("dead", "pendientes")["resultados"]] == [True, True]
+            assert [x["anadido"] for x in api.buscar_juego("dead", "completados")["resultados"]] == [False, False]
+
+            assert api.mover_a_carpeta("pendientes", 2379780, coop)["ok"]
+            assert api.mover_a_carpeta("pendientes", 2379780, 12345)["ok"] is False
+            assert api.renombrar_carpeta(coop, "Con mi pareja")["ok"]
+            assert api.coleccion("pendientes")["carpetas"][0]["nombre"] == "Con mi pareja"
+
+            # Completar: sale de pendientes; platino desde completados
+            assert api.anadir_a_coleccion("completados", 588650, "Dead Cells", None)["ok"]
+            assert api.anadir_a_coleccion("platinos", 588650, "Dead Cells")["ok"]
+            completados = api.coleccion("completados")["juegos"]
+            assert completados[0]["platino"] is True and completados[0]["en_biblioteca"] is False
+            assert api.colecciones_resumen() == {"pendientes": 2, "completados": 1, "platinos": 1}
+            assert api.coleccion("platinos")["con_carpetas"] is False
+
+            # Puntuar un completado que no está en ninguna biblioteca lo añade a la manual
+            assert api.puntuar(588650, 5, "Dead Cells")["ok"]
+            assert [j["nombre"] for j in api.biblioteca("manual")] == ["Dead Cells"]
+            assert api.coleccion("completados")["juegos"][0]["nota"] == 5
+            assert api.puntuar(1, None, None)["ok"]          # quitar nota de algo inexistente: no rompe
+            assert api.puntuar(1, 3, None)["ok"] is False    # sin nombre no puede añadirlo
+
+            perfil = api.perfil()
+            assert perfil["completados"] == 1 and perfil["platinos"] == 1
+            assert perfil["favoritos"][0]["nombre"] == "Dead Cells"
+
+            # Borrar carpeta: los juegos se quedan, sin carpeta
+            assert api.borrar_carpeta(coop)["ok"]
+            datos = api.coleccion("pendientes")
+            assert datos["carpetas"] == [] and all(j["carpeta_id"] is None for j in datos["juegos"])
+
+            assert api.quitar_de_coleccion("completados", 588650)["ok"]
+            assert api.colecciones_resumen() == {"pendientes": 2, "completados": 0, "platinos": 0}
+        finally:
+            mp.deshacer()
+
+
 if __name__ == "__main__":
-    try:
-        test_flujo_completo()
-        print("OK     test_flujo_completo")
-    except Exception as e:
-        print(f"FALLO  test_flujo_completo: {e!r}")
-        raise
+    fallos = 0
+    for prueba in (test_flujo_completo, test_colecciones_desde_la_ventana):
+        try:
+            prueba()
+            print(f"OK     {prueba.__name__}")
+        except Exception as e:
+            fallos += 1
+            print(f"FALLO  {prueba.__name__}: {e!r}")
+            import traceback
+            traceback.print_exc()
+    sys.exit(1 if fallos else 0)

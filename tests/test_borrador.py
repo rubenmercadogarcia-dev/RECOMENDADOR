@@ -122,6 +122,65 @@ def test_biblioteca_manual_y_notas(monkeypatch):
     assert [j["nombre"] for j in bd.juegos(con)] == ["Dead Cells"]
 
 
+def test_colecciones(monkeypatch):
+    con = preparar(monkeypatch)
+    coop = bd.crear_carpeta(con, "pendientes", "Cooperativo")
+    corto = bd.crear_carpeta(con, "pendientes", "Para una tarde")
+    for malo in (lambda: bd.crear_carpeta(con, "pendientes", "cooperativo ".strip().title()),
+                 lambda: bd.crear_carpeta(con, "platinos", "No se puede"),
+                 lambda: bd.crear_carpeta(con, "pendientes", "   ")):
+        try:
+            malo()
+            raise AssertionError("debería fallar")
+        except ValueError:
+            pass
+
+    # Pendientes en carpetas; no se recomiendan
+    bd.anadir_a_coleccion(con, "pendientes", 588650, "Dead Cells", coop)
+    bd.anadir_a_coleccion(con, "pendientes", 2379780, "Balatro", corto)
+    assert {r["nombre"]: r["total"] for r in bd.carpetas(con, "pendientes")} == {"Cooperativo": 1, "Para una tarde": 1}
+    nombres = [r["nombre"] for r in recomendador.recomendar(con, perfil.construir(con))]
+    assert "Dead Cells" not in nombres and "Balatro" not in nombres
+
+    # Mover y borrar carpeta: los juegos se quedan sin carpeta
+    bd.mover_a_carpeta(con, "pendientes", 2379780, coop)
+    bd.borrar_carpeta(con, coop)
+    assert {r["appid"]: r["carpeta_id"] for r in bd.coleccion(con, "pendientes")} == {588650: None, 2379780: None}
+    try:
+        bd.mover_a_carpeta(con, "pendientes", 588650, 999)
+        raise AssertionError("carpeta inexistente")
+    except ValueError:
+        pass
+
+    # Completar: sale de pendientes. Platino: también cuenta como completado
+    bd.anadir_a_coleccion(con, "completados", 588650, "Dead Cells")
+    assert [r["nombre"] for r in bd.coleccion(con, "pendientes")] == ["Balatro"]
+    bd.anadir_a_coleccion(con, "platinos", 271590, "GTA V")
+    completados = {r["nombre"]: r["platino"] for r in bd.coleccion(con, "completados")}
+    assert completados == {"Dead Cells": 0, "GTA V": 1}
+    assert bd.resumen_colecciones(con) == {"pendientes": 1, "completados": 2, "platinos": 1}
+
+    # Perfil: GTA V (45 min) era "abandonado"; con platino pasa a favorito.
+    # Dead Cells no está en la biblioteca, pero completado cuenta como gustado.
+    p = perfil.construir(con)
+    favoritos = [j["nombre"] for j in p["favoritos"]]
+    assert "GTA V" in favoritos and "Dead Cells" in favoritos
+    assert "GTA V" not in [j["nombre"] for j in p["abandonados"]]
+    # Tu nota manda sobre el platino
+    bd.puntuar(con, 271590, 1)
+    assert "GTA V" not in [j["nombre"] for j in perfil.construir(con)["favoritos"]]
+
+    # Quitar de completados quita también el platino
+    bd.quitar_de_coleccion(con, "completados", 271590)
+    assert bd.coleccion(con, "platinos") == []
+
+    # Los juegos fuera de Steam no chocan con los de la biblioteca manual
+    bd.anadir_manual(con, bd.nuevo_id_sin_steam(con), "Zelda")
+    sin_steam = bd.nuevo_id_sin_steam(con)
+    bd.anadir_a_coleccion(con, "platinos", sin_steam, "Astro Bot")
+    assert bd.nuevo_id_sin_steam(con) == sin_steam - 1
+
+
 def test_migracion_bd_antigua(monkeypatch):
     import sqlite3
     import tempfile

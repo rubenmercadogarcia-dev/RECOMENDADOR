@@ -18,11 +18,16 @@ GENERICAS = {"Indie", "Singleplayer", "Action", "Adventure", "Casual", "Great So
              "Full controller support", "Compat. total con mando"}
 
 
-def afecto(j) -> float | None:
+def afecto(j, estado: str | None = None) -> float | None:
     """Cuánto te gusta un juego: positivo = te gusta, negativo = no.
-    None si no hay información (sin nota y sin jugar)."""
+    Orden de prioridad: tu nota > platino/completado > horas jugadas.
+    None si no hay información (sin nota, sin completar y sin jugar)."""
     if j["nota"]:
         return PESO_NOTA[j["nota"]]
+    if estado == "platino":
+        return PESO_NOTA[5]
+    if estado == "completado":
+        return PESO_NOTA[4]
     horas = j["minutos"] / 60
     if horas >= HORAS_ABANDONO:
         return math.log1p(horas)
@@ -31,16 +36,27 @@ def afecto(j) -> float | None:
     return None
 
 
+def _juego_solo_en_coleccion(appid: int, nombre: str) -> dict:
+    """Un juego completado que no está en tus bibliotecas, con la misma forma
+    que una fila de la tabla juegos."""
+    return {"appid": appid, "nombre": nombre, "minutos": 0, "minutos_2sem": 0, "nota": None,
+            "en_steam": 0, "en_manual": 0}
+
+
 def construir(con) -> dict:
     juegos = bd.juegos(con)
-    con_afecto = [(afecto(j), j) for j in juegos]
+    estados = bd.estados_coleccion(con)
+    en_biblioteca = {j["appid"] for j in juegos}
+    nombres = {r["appid"]: r["nombre"] for r in bd.coleccion(con, "completados")}
+    extra = [_juego_solo_en_coleccion(a, nombres.get(a, f"App {a}"))
+             for a in estados if a not in en_biblioteca]
+    con_afecto = [(afecto(j, estados.get(j["appid"])), j) for j in list(juegos) + extra]
 
     favoritos = sorted(
         (x for x in con_afecto if (x[1]["nota"] or 0) >= 4
-         or (not x[1]["nota"] and x[1]["minutos"] >= HORAS_FAVORITO * 60)),
+         or (not x[1]["nota"] and (x[1]["appid"] in estados or x[1]["minutos"] >= HORAS_FAVORITO * 60))),
         key=lambda x: x[0], reverse=True)
-    abandonados = [j for a, j in con_afecto if (j["nota"] and j["nota"] <= 2)
-                   or (not j["nota"] and 0 < j["minutos"] < HORAS_ABANDONO * 60)]
+    abandonados = [j for a, j in con_afecto if a is not None and a < 0]
     sin_jugar = [j for a, j in con_afecto if a is None and j["en_steam"]]
     recientes = [j for j in juegos if j["minutos_2sem"]]
 

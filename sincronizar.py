@@ -28,6 +28,7 @@ def juegos_sin_etiquetas(con) -> list:
     todos = bd.juegos(con)
     jugados = [j for j in todos if j["minutos"] > 0][:JUEGOS_A_ETIQUETAR]
     importantes = [j for j in todos if j["nota"] or j["en_manual"]]
+    importantes += [r for r in bd.coleccion(con, "completados")]  # completados y platinos
     vistos, resultado = set(), []
     for j in jugados + importantes:
         if j["appid"] > 0 and j["appid"] not in vistos and not bd.tiene_etiquetas(con, j["appid"]):

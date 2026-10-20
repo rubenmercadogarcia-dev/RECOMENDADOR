@@ -2,7 +2,7 @@
 
 Recomendador de videojuegos **gratuito**. Junta tu biblioteca de Steam y los juegos que añadas a mano (también de consola u otras tiendas), aprende de tus notas y de tus horas de juego, te hace unas preguntas y te recomienda juegos que **no tienes**, explicando el porqué. No hace falta pagar nada.
 
-> 🚧 **Estado: v0.3 en desarrollo.** Próximos pasos: colecciones (pendientes, completados, platinos) y un recomendador nuevo con catálogo propio.
+> 🚧 **Estado: v0.4 en desarrollo.** Próximo paso: un recomendador nuevo con catálogo propio y prioridad indie.
 
 ## Qué hace
 
@@ -10,7 +10,11 @@ Recomendador de videojuegos **gratuito**. Junta tu biblioteca de Steam y los jue
 2. **Biblioteca manual:** busca juegos en la tienda de Steam y añádelos, o escribe el nombre de los que no están en Steam.
 3. **Puntúa** cualquier juego de 1 a 5 estrellas. Tu nota manda sobre las horas jugadas.
 4. **Perfil:** lo que más te gusta y tus etiquetas fuertes (Roguelite, Metroidvania…).
-5. **Recomendaciones** que comparten lo que te gusta, filtradas por tus respuestas a las preguntas. Lo que descartas no vuelve a salir.
+5. **Colecciones** con portadas verticales, como la biblioteca de Steam:
+   - **Pendientes**, organizados en carpetas.
+   - **Completados**, también con carpetas. Cuentan como juegos que te gustan.
+   - **Platinos**. Un platino también cuenta como completado, y completar un juego lo quita de pendientes.
+6. **Recomendaciones** que comparten lo que te gusta, filtradas por tus respuestas a las preguntas. Puedes mandarlas a pendientes, y lo que descartas no vuelve a salir. Nunca te recomienda lo que ya tienes en tus bibliotecas o colecciones.
 
 ## Requisitos
 
@@ -61,7 +65,7 @@ La clave de Steam y la base de datos se guardan **fuera del proyecto**:
 - [x] v0.1 – Borrador en terminal
 - [x] v0.2 – Interfaz gráfica sobria y oscura
 - [x] v0.3 – Biblioteca manual, puntuaciones y sin claves de pago
-- [ ] Colecciones: pendientes (con carpetas), completados y platinos
+- [x] v0.4 – Colecciones: pendientes y completados con carpetas, y platinos
 - [ ] Recomendador nuevo: catálogo propio con prioridad indie y hasta 10 preguntas
 - [ ] Empaquetar como `.exe` con PyInstaller y publicarlo en *Releases*
 - [ ] Página web de presentación con botón de descarga
