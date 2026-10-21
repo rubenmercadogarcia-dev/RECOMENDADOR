@@ -1,73 +1,88 @@
-2026-10-20 22:22:51 Campos de 'all': ['appid', 'average_2weeks', 'average_forever', 'ccu', 'developer', 'discount', 'initialprice', 'median_2weeks', 'median_forever', 'name', 'negative', 'owners', 'positive', 'price', 'publisher', 'score_rank', 'userscore']
-2026-10-20 22:22:51 Página 0: 1000 juegos (total 1000).
-2026-10-20 22:23:52 Página 1: 1000 juegos (total 2000).
-2026-10-20 22:24:53 Página 2: 1000 juegos (total 3000).
-2026-10-20 22:25:54 Página 3: 1000 juegos (total 3998).
-2026-10-20 22:26:56 Página 4: 1000 juegos (total 4996).
-2026-10-20 22:27:57 Página 5: 1000 juegos (total 5992).
-2026-10-20 22:28:58 Página 6: 1000 juegos (total 6984).
-2026-10-20 22:30:00 Página 7: 1000 juegos (total 7976).
-2026-10-20 22:31:01 Página 8: 1000 juegos (total 8969).
-2026-10-20 22:32:02 Página 9: 1000 juegos (total 9955).
-2026-10-20 22:33:03 Página 10: 1000 juegos (total 10935).
-2026-10-20 22:34:05 Página 11: 1000 juegos (total 11912).
-2026-10-20 22:35:06 Página 12: 1000 juegos (total 12910).
-2026-10-20 22:36:07 Página 13: 1000 juegos (total 13904).
-2026-10-20 22:37:08 Página 14: 1000 juegos (total 14869).
-2026-10-20 22:38:10 Página 15: 1000 juegos (total 15836).
-2026-10-20 22:39:11 Página 16: 1000 juegos (total 16789).
-2026-10-20 22:40:12 Página 17: 1000 juegos (total 17719).
-2026-10-20 22:41:13 Página 18: 1000 juegos (total 18699).
-2026-10-20 22:42:15 Página 19: 1000 juegos (total 19672).
-2026-10-20 22:43:16 Página 20: 1000 juegos (total 20571).
-2026-10-20 22:44:17 Página 21: 1000 juegos (total 21570).
-2026-10-20 22:45:18 Página 22: 1000 juegos (total 22560).
-2026-10-20 22:46:20 Página 23: 1000 juegos (total 23519).
-2026-10-20 22:47:21 Página 24: 1000 juegos (total 24381).
-2026-10-20 22:48:22 Página 25: 1000 juegos (total 25278).
-2026-10-20 22:49:24 Página 26: 1000 juegos (total 26070).
-2026-10-20 22:50:25 Página 27: 1000 juegos (total 27048).
-2026-10-20 22:51:26 Página 28: 1000 juegos (total 27965).
-2026-10-20 22:52:27 Página 29: 1000 juegos (total 28845).
-2026-10-20 22:53:29 Página 30: 1000 juegos (total 29737).
-2026-10-20 22:54:30 Página 31: 1000 juegos (total 30690).
-2026-10-20 22:55:31 Página 32: 1000 juegos (total 31577).
-2026-10-20 22:56:32 Página 33: 1000 juegos (total 32418).
-2026-10-20 22:57:34 Página 34: 1000 juegos (total 33415).
-2026-10-20 22:58:35 Página 35: 1000 juegos (total 34113).
-2026-10-20 22:59:36 Página 36: 1000 juegos (total 34750).
-2026-10-20 23:00:37 Página 37: 1000 juegos (total 35685).
-2026-10-20 23:01:39 Página 38: 1000 juegos (total 36476).
-2026-10-20 23:02:40 Página 39: 1000 juegos (total 37240).
-2026-10-20 23:02:40 7000 candidatos con al menos 40 reseñas y 70% positivas.
-2026-10-20 23:02:41 Campos de 'appdetails': ['appid', 'average_2weeks', 'average_forever', 'ccu', 'developer', 'discount', 'genre', 'initialprice', 'languages', 'median_2weeks', 'median_forever', 'name', 'negative', 'owners', 'positive', 'price', 'publisher', 'score_rank', 'tags', 'userscore']
-2026-10-20 23:08:13   250/7000 · 227 en el catálogo
-2026-10-20 23:13:43   500/7000 · 442 en el catálogo
-2026-10-20 23:19:12   750/7000 · 676 en el catálogo
-2026-10-20 23:24:40   1000/7000 · 894 en el catálogo
-2026-10-20 23:30:09   1250/7000 · 1113 en el catálogo
-2026-10-20 23:35:46   1500/7000 · 1328 en el catálogo
-2026-10-20 23:41:25   1750/7000 · 1553 en el catálogo
-2026-10-20 23:47:03   2000/7000 · 1772 en el catálogo
-2026-10-20 23:49:36   aviso: ConnectionError en {'request': 'appdetails', 'appid': 801630}: ('Connection aborted.', ConnectionResetError(104, 'Connection reset by peer'))
-2026-10-20 23:52:44   2250/7000 · 1977 en el catálogo
-2026-10-20 23:53:03   aviso: ConnectionError en {'request': 'appdetails', 'appid': 1648390}: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
-2026-10-20 23:58:20   aviso: ConnectionError en {'request': 'appdetails', 'appid': 2179170}: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
-2026-10-20 23:58:36   2500/7000 · 2198 en el catálogo
-2026-10-21 00:04:30   2750/7000 · 2401 en el catálogo
-2026-10-21 00:10:37   3000/7000 · 2611 en el catálogo
-2026-10-21 00:16:23   3250/7000 · 2829 en el catálogo
-2026-10-21 00:22:04   3500/7000 · 3048 en el catálogo
-2026-10-21 00:27:45   3750/7000 · 3253 en el catálogo
-2026-10-21 00:33:26   4000/7000 · 3466 en el catálogo
-2026-10-21 00:39:06   4250/7000 · 3675 en el catálogo
-2026-10-21 00:44:47   4500/7000 · 3895 en el catálogo
-2026-10-21 00:56:16   5000/7000 · 4325 en el catálogo
-2026-10-21 01:07:38   5500/7000 · 4765 en el catálogo
-2026-10-21 01:13:26   5750/7000 · 4986 en el catálogo
-2026-10-21 01:24:51   6250/7000 · 5424 en el catálogo
-2026-10-21 01:30:37   6500/7000 · 5643 en el catálogo
-2026-10-21 01:36:21   6750/7000 · 5865 en el catálogo
-2026-10-21 01:42:02   7000/7000 · 6089 en el catálogo
-2026-10-21 01:42:02 Catálogo: 6089 juegos · 4103 indies · 0 sin etiquetas · 911 descartados · 199 min.
-2026-10-21 01:42:02 Guardado en datos/catalogo.json.gz (614 KB).
+2026-10-21 01:45:44 Campos de 'all': ['appid', 'average_2weeks', 'average_forever', 'ccu', 'developer', 'discount', 'initialprice', 'median_2weeks', 'median_forever', 'name', 'negative', 'owners', 'positive', 'price', 'publisher', 'score_rank', 'userscore']
+2026-10-21 01:45:44 Página 0: 1000 juegos (total 1000).
+2026-10-21 01:46:45 Página 1: 1000 juegos (total 2000).
+2026-10-21 01:47:46 Página 2: 1000 juegos (total 3000).
+2026-10-21 01:48:48 Página 3: 1000 juegos (total 3998).
+2026-10-21 01:49:49 Página 4: 1000 juegos (total 4996).
+2026-10-21 01:50:50 Página 5: 1000 juegos (total 5992).
+2026-10-21 01:51:51 Página 6: 1000 juegos (total 6984).
+2026-10-21 01:52:53 Página 7: 1000 juegos (total 7976).
+2026-10-21 01:53:54 Página 8: 1000 juegos (total 8969).
+2026-10-21 01:54:55 Página 9: 1000 juegos (total 9955).
+2026-10-21 01:55:56 Página 10: 1000 juegos (total 10935).
+2026-10-21 01:56:58 Página 11: 1000 juegos (total 11912).
+2026-10-21 01:57:59 Página 12: 1000 juegos (total 12910).
+2026-10-21 01:59:00 Página 13: 1000 juegos (total 13904).
+2026-10-21 02:00:01 Página 14: 1000 juegos (total 14869).
+2026-10-21 02:01:03 Página 15: 1000 juegos (total 15836).
+2026-10-21 02:02:04 Página 16: 1000 juegos (total 16789).
+2026-10-21 02:03:05 Página 17: 1000 juegos (total 17719).
+2026-10-21 02:04:06 Página 18: 1000 juegos (total 18699).
+2026-10-21 02:05:07 Página 19: 1000 juegos (total 19672).
+2026-10-21 02:06:09 Página 20: 1000 juegos (total 20571).
+2026-10-21 02:07:10 Página 21: 1000 juegos (total 21570).
+2026-10-21 02:08:11 Página 22: 1000 juegos (total 22560).
+2026-10-21 02:09:12 Página 23: 1000 juegos (total 23519).
+2026-10-21 02:10:14 Página 24: 1000 juegos (total 24381).
+2026-10-21 02:11:15 Página 25: 1000 juegos (total 25278).
+2026-10-21 02:12:16 Página 26: 1000 juegos (total 26070).
+2026-10-21 02:13:17 Página 27: 1000 juegos (total 27048).
+2026-10-21 02:14:19 Página 28: 1000 juegos (total 27965).
+2026-10-21 02:15:20 Página 29: 1000 juegos (total 28845).
+2026-10-21 02:16:21 Página 30: 1000 juegos (total 29737).
+2026-10-21 02:17:22 Página 31: 1000 juegos (total 30690).
+2026-10-21 02:18:24 Página 32: 1000 juegos (total 31577).
+2026-10-21 02:19:25 Página 33: 1000 juegos (total 32418).
+2026-10-21 02:20:26 Página 34: 1000 juegos (total 33415).
+2026-10-21 02:21:27 Página 35: 1000 juegos (total 34113).
+2026-10-21 02:22:29 Página 36: 1000 juegos (total 34750).
+2026-10-21 02:23:30 Página 37: 1000 juegos (total 35685).
+2026-10-21 02:24:31 Página 38: 1000 juegos (total 36476).
+2026-10-21 02:25:32 Página 39: 1000 juegos (total 37240).
+2026-10-21 02:25:32 7000 candidatos con al menos 40 reseñas y 70% positivas.
+2026-10-21 02:25:33 Campos de 'appdetails': ['appid', 'average_2weeks', 'average_forever', 'ccu', 'developer', 'discount', 'genre', 'initialprice', 'languages', 'median_2weeks', 'median_forever', 'name', 'negative', 'owners', 'positive', 'price', 'publisher', 'score_rank', 'tags', 'userscore']
+2026-10-21 02:30:57   250/7000 · 242 en el catálogo
+2026-10-21 02:36:22   500/7000 · 481 en el catálogo
+2026-10-21 02:41:47   750/7000 · 727 en el catálogo
+2026-10-21 02:47:12   1000/7000 · 964 en el catálogo
+2026-10-21 02:52:39   1250/7000 · 1202 en el catálogo
+2026-10-21 02:58:08   1500/7000 · 1437 en el catálogo
+2026-10-21 03:03:36   1750/7000 · 1677 en el catálogo
+2026-10-21 03:09:04   2000/7000 · 1911 en el catálogo
+2026-10-21 03:10:20   aviso: JSONDecodeError en {'request': 'appdetails', 'appid': 265610}: Expecting value: line 1 column 1 (char 0)
+2026-10-21 03:10:26   aviso: JSONDecodeError en {'request': 'appdetails', 'appid': 265610}: Expecting value: line 1 column 1 (char 0)
+2026-10-21 03:10:36   aviso: JSONDecodeError en {'request': 'appdetails', 'appid': 265610}: Expecting value: line 1 column 1 (char 0)
+2026-10-21 03:10:51   aviso: JSONDecodeError en {'request': 'appdetails', 'appid': 265610}: Expecting value: line 1 column 1 (char 0)
+2026-10-21 03:15:24   2250/7000 · 2141 en el catálogo
+2026-10-21 03:20:54   2500/7000 · 2376 en el catálogo
+2026-10-21 03:26:24   2750/7000 · 2610 en el catálogo
+2026-10-21 03:31:53   3000/7000 · 2840 en el catálogo
+2026-10-21 03:37:21   3250/7000 · 3078 en el catálogo
+2026-10-21 03:42:47   3500/7000 · 3313 en el catálogo
+2026-10-21 03:48:16   3750/7000 · 3541 en el catálogo
+2026-10-21 03:53:45   4000/7000 · 3776 en el catálogo
+2026-10-21 03:53:47   aviso: JSONDecodeError en {'request': 'appdetails', 'appid': 234390}: Expecting value: line 1 column 1 (char 0)
+2026-10-21 03:53:53   aviso: JSONDecodeError en {'request': 'appdetails', 'appid': 234390}: Expecting value: line 1 column 1 (char 0)
+2026-10-21 03:54:03   aviso: JSONDecodeError en {'request': 'appdetails', 'appid': 234390}: Expecting value: line 1 column 1 (char 0)
+2026-10-21 03:54:18   aviso: JSONDecodeError en {'request': 'appdetails', 'appid': 234390}: Expecting value: line 1 column 1 (char 0)
+2026-10-21 04:00:03   4250/7000 · 4006 en el catálogo
+2026-10-21 04:05:29   4500/7000 · 4246 en el catálogo
+2026-10-21 04:06:49   aviso: JSONDecodeError en {'request': 'appdetails', 'appid': 219950}: Expecting value: line 1 column 1 (char 0)
+2026-10-21 04:06:54   aviso: JSONDecodeError en {'request': 'appdetails', 'appid': 219950}: Expecting value: line 1 column 1 (char 0)
+2026-10-21 04:07:04   aviso: JSONDecodeError en {'request': 'appdetails', 'appid': 219950}: Expecting value: line 1 column 1 (char 0)
+2026-10-21 04:07:19   aviso: JSONDecodeError en {'request': 'appdetails', 'appid': 219950}: Expecting value: line 1 column 1 (char 0)
+2026-10-21 04:10:20   aviso: JSONDecodeError en {'request': 'appdetails', 'appid': 1948800}: Expecting value: line 1 column 1 (char 0)
+2026-10-21 04:10:25   aviso: JSONDecodeError en {'request': 'appdetails', 'appid': 1948800}: Expecting value: line 1 column 1 (char 0)
+2026-10-21 04:10:36   aviso: JSONDecodeError en {'request': 'appdetails', 'appid': 1948800}: Expecting value: line 1 column 1 (char 0)
+2026-10-21 04:10:51   aviso: JSONDecodeError en {'request': 'appdetails', 'appid': 1948800}: Expecting value: line 1 column 1 (char 0)
+2026-10-21 04:12:36   4750/7000 · 4477 en el catálogo
+2026-10-21 04:18:05   5000/7000 · 4710 en el catálogo
+2026-10-21 04:23:32   5250/7000 · 4950 en el catálogo
+2026-10-21 04:29:00   5500/7000 · 5183 en el catálogo
+2026-10-21 04:34:29   5750/7000 · 5421 en el catálogo
+2026-10-21 04:45:27   6250/7000 · 5889 en el catálogo
+2026-10-21 04:50:54   6500/7000 · 6118 en el catálogo
+2026-10-21 04:56:23   6750/7000 · 6357 en el catálogo
+2026-10-21 05:01:53   7000/7000 · 6596 en el catálogo
+2026-10-21 05:01:53 Catálogo: 6596 juegos · 4354 indies · 0 sin etiquetas · 400 descartados · 196 min.
+2026-10-21 05:01:53 Guardado en datos/catalogo.json.gz (667 KB).
