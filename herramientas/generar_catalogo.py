@@ -24,7 +24,10 @@ STEAMSPY = "https://steamspy.com/api.php"
 CABECERAS = {"User-Agent": "RECOMENDADOR-catalogo (github.com/rubenmercadogarcia-dev/RECOMENDADOR)"}
 
 # Si un juego tiene alguna de estas etiquetas, no entra en el catálogo
-EXCLUIR = {"Hentai", "NSFW", "Sexual Content", "Nudity"}
+EXCLUIR = {"Hentai", "NSFW"}
+# Estas solo excluyen si son de lo principal del juego (entre sus 3 etiquetas más votadas).
+# Muchos juegos normales las tienen como algo secundario (The Witcher 3, Baldur's Gate 3...)
+ADULTO = {"Sexual Content", "Nudity"}
 # Programas que no son juegos
 NO_JUEGOS = {"Utilities", "Software", "Design & Illustration", "Video Production",
              "Animation & Modeling", "Audio Production", "Game Development", "Web Publishing",
@@ -130,6 +133,9 @@ def main() -> None:
                 descartados += 1
                 continue
             principales = sorted(votos.items(), key=lambda x: x[1], reverse=True)[:20]
+            if ADULTO & {t for t, _ in principales[:3]}:
+                descartados += 1
+                continue
             if sum(1 for t, _ in principales[:5] if t in NO_JUEGOS) >= 2:
                 descartados += 1
                 continue

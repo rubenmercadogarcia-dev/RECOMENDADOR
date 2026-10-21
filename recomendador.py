@@ -110,7 +110,7 @@ def _factor_respuestas(etiquetas: dict, prefs: dict) -> float:
         elegidos = [o for o in _lista(prefs.get(clave)) if o in tabla]
         if elegidos:
             mejor = max((etiquetas.get(t, 0.0) for o in elegidos for t in tabla[o]), default=0.0)
-            factor *= 0.5 + 1.1 * mejor if mejor > 0 else 0.45
+            factor *= 0.6 + 1.6 * mejor if mejor > 0 else 0.2
     return min(max(factor, 0.15), 4.0)
 
 
@@ -281,7 +281,7 @@ def recomendar(con, perfil: dict, n: int = 12, avisar=avisar_por_terminal,
         if precio is not None and precio > presupuesto:
             continue
         resultado.append({
-            "appid": j["id"], "nombre": nombre, "motivo": _motivo(c, vectores, crudas, cat, zona, enfoque),
+            "appid": j["id"], "nombre": nombre, "motivo": _motivo(c, vectores, crudas, cat, zona, enfoque) + _lo_que_pediste(j["t"], prefs),
             "precio": precio, "valoracion": round(j["p"] / max(j["p"] + j["ng"], 1) * 100),
             "resenas": j["p"] + j["ng"], "indie": bool(j.get("i")),
             "etiquetas": [es(t) for t, _ in sorted(j["t"].items(), key=lambda x: x[1], reverse=True)[:4]],
@@ -290,6 +290,21 @@ def recomendar(con, perfil: dict, n: int = 12, avisar=avisar_por_terminal,
     if relajado and resultado:
         avisar("Había pocos juegos que cumplieran todo; he relajado el modo de juego.")
     return resultado
+
+
+def _lo_que_pediste(etiquetas: dict, prefs: dict) -> str:
+    """Añade a la explicación la parte de tus respuestas que cumple el juego."""
+    cumple = []
+    for clave, tabla in (("estilo", ESTILOS), ("ambientacion", AMBIENTACIONES)):
+        for opcion in _lista(prefs.get(clave)):
+            mejor = max((t for t in tabla.get(opcion, []) if t in etiquetas),
+                        key=lambda t: etiquetas[t], default=None)
+            if mejor:
+                cumple.append(es(mejor))
+    for (clave, valor), necesarias in REQUISITOS.items():
+        if prefs.get(clave) == valor and any(t in etiquetas for t in necesarias):
+            cumple.append(valor)
+    return f" Y tiene lo que pediste: {_juntar(cumple).lower()}." if cumple else ""
 
 
 def _motivo(c: dict, vectores: dict, crudas: dict, cat, zona: str, enfoque) -> str:
