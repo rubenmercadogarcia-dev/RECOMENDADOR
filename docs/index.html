@@ -68,6 +68,7 @@
       color: var(--c, var(--flecha-3)); text-shadow: 3px 3px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
       animation: tembleque 2.4s ease-in-out infinite; animation-delay: var(--retraso, 0s);
     }
+    .cartel.especial { z-index: 3; letter-spacing: .05em; }
     @keyframes tembleque { 0%, 100% { transform: rotate(var(--giro, -6deg)) scale(1); } 50% { transform: rotate(calc(var(--giro, -6deg) * -1)) scale(1.08); } }
 
     /* Al pasar por encima del botón, las flechas se vuelven locas */
@@ -227,7 +228,9 @@
       const r = (el, margen) => { const b = el.getBoundingClientRect();
         return { x1: b.left - p.left - margen, x2: b.right - p.left + margen, y1: b.top - p.top - margen, y2: b.bottom - p.top + margen }; };
       return [r(boton, 70), r(document.querySelector(".marca"), 12), r(document.querySelector("h1"), 10), r(document.querySelector(".lema"), 8),
-              r(document.getElementById("mas-flechas"), 16), r(contador, 10)];
+              r(document.getElementById("mas-flechas"), 16), r(contador, 10),
+              ...[...document.querySelectorAll(".cartel.especial")].map((e) => r(e, 70)),
+              ...[...document.querySelectorAll(".cartel:not(.especial)")].map((e) => r(e, 4))];
     }
 
     function apuntar(f) {
@@ -236,15 +239,15 @@
       f.nodo.style.transform = `translate(${f.x - f.ancho / 2}px, ${f.y - f.alto / 2}px) rotate(${angulo}deg) scale(${f.escala})`;
     }
 
-    function crearFlecha({ gigante = false, nueva = false } = {}) {
+    function crearFlecha({ gigante = false, nueva = false, x: fx, y: fy, forma: fForma, color, escala: fEscala } = {}) {
       const p = portada.getBoundingClientRect();
-      const { x, y } = sitioLibre(p.width, p.height, gigante ? [] : zonas());
-      const forma = Math.floor(Math.random() * FORMAS.length);
+      const { x, y } = fx != null ? { x: fx, y: fy } : sitioLibre(p.width, p.height, gigante ? [] : zonas());
+      const forma = fForma ?? Math.floor(Math.random() * FORMAS.length);
       const nodo = document.createElement("div");
       nodo.className = `flecha${gigante ? " gigante" : ""}${nueva ? " nueva" : ""}`;
       const pequeña = window.innerWidth < 760;
-      const escala = gigante ? azar(2.4, 4) : azar(pequeña ? .35 : .45, pequeña ? .8 : 1.25);
-      nodo.innerHTML = `<span class="cuerpo">${FORMAS[forma](elegir(COLORES))}</span>`;
+      const escala = fEscala ?? (gigante ? azar(2.4, 4) : azar(pequeña ? .35 : .45, pequeña ? .8 : 1.25));
+      nodo.innerHTML = `<span class="cuerpo">${FORMAS[forma](color || elegir(COLORES))}</span>`;
       const cuerpo = nodo.firstElementChild;
       cuerpo.style.setProperty("--vel", `${azar(.55, 1.2).toFixed(2)}s`);
       cuerpo.style.setProperty("--retraso", `${azar(-1, 0).toFixed(2)}s`);
@@ -258,25 +261,55 @@
 
     function crearCartel() {
       const p = portada.getBoundingClientRect();
-      const { x, y } = sitioLibre(p.width - 160, p.height - 40, zonas());
       const nodo = document.createElement("div");
       nodo.className = "cartel";
       nodo.textContent = elegir(CARTELES);
-      nodo.style.left = `${Math.max(8, x)}px`;
-      nodo.style.top = `${Math.max(8, y)}px`;
       nodo.style.fontSize = `${Math.round(azar(18, window.innerWidth < 760 ? 30 : 44))}px`;
       nodo.style.setProperty("--c", elegir(COLORES));
       nodo.style.setProperty("--giro", `${azar(-12, 12).toFixed(1)}deg`);
       nodo.style.setProperty("--retraso", `${azar(-2, 0).toFixed(2)}s`);
       capa.appendChild(nodo);
+      // Busca un sitio donde el cartel entero (no solo una esquina) no tape nada
+      const ancho = nodo.offsetWidth + 16, alto = nodo.offsetHeight + 16, prohibidas = zonas();
+      for (let i = 0; i < 60; i++) {
+        const x = azar(4, Math.max(5, p.width - ancho)), y = azar(4, Math.max(5, p.height - alto));
+        const choca = prohibidas.some((z) => x < z.x2 && x + ancho > z.x1 && y < z.y2 && y + alto > z.y1);
+        if (!choca) { nodo.style.left = `${x}px`; nodo.style.top = `${y}px`; return; }
+      }
+      nodo.remove();   // no cabe sin tapar algo: mejor no ponerlo
     }
 
     function contar() {
-      const n = flechas.length;
-      const comentarios = [[0, ""], [60, "Ahora sí lo ves, ¿no?"], [100, "Vale, esto ya es demasiado."],
-        [160, "Las flechas tienen sindicato y están protestando."], [240, "Has roto la página. Enhorabuena."]];
-      const comentario = comentarios.filter(([min]) => extra > 0 && n >= min).pop()?.[1] || "";
-      contador.textContent = `${n} flechas apuntando al botón${comentario ? " · " + comentario : ""}`;
+      const comentarios = [[1, "Ahora sí lo ves, ¿no?"], [3, "Vale, esto ya es demasiado."],
+        [6, "Las flechas tienen sindicato y están protestando."], [9, "Has roto la página. Enhorabuena."]];
+      const veces = extra / 12;
+      contador.textContent = comentarios.filter(([min]) => veces >= min).pop()?.[1] || "";
+    }
+
+    // El cartel fijo, con su flecha propia
+    function crearCartelEspecial() {
+      const p = portada.getBoundingClientRect(), c = centroBoton();
+      const pequeña = window.innerWidth < 760;
+      const nodo = document.createElement("div");
+      nodo.className = "cartel especial";
+      nodo.textContent = "PULSA AQUÍ SI ERES VIRGEN";
+      nodo.style.fontSize = `${pequeña ? 24 : 34}px`;
+      nodo.style.setProperty("--c", "var(--flecha-2)");
+      nodo.style.setProperty("--giro", "-5deg");
+      capa.appendChild(nodo);
+      // Si no cabe a lo ancho (móviles pequeños), se encoge hasta que quepa
+      let tam = pequeña ? 24 : 34;
+      while (nodo.offsetWidth > p.width - 40 && tam > 14) { tam -= 1; nodo.style.fontSize = `${tam}px`; }
+      const ancho = nodo.offsetWidth, alto = nodo.offsetHeight;
+      // Centrado debajo del botón, por debajo de «pon más flechas»
+      const masFlechas = document.getElementById("mas-flechas").getBoundingClientRect();
+      const x = Math.max(8, Math.min(p.width - ancho - 8, c.x - ancho / 2));
+      const y = masFlechas.bottom - p.top + (pequeña ? 40 : 46);
+      nodo.style.left = `${x}px`;
+      nodo.style.top = `${y}px`;
+      // La flecha sale del extremo derecho del cartel y sube hacia el botón
+      const fx = Math.min(p.width - 30, x + ancho + (pequeña ? -30 : 10)), fy = y - (pequeña ? 18 : 6);
+      crearFlecha({ x: fx, y: fy, forma: 0, color: "var(--flecha-2)", escala: pequeña ? .6 : .8 });
     }
 
     function dibujarTodo() {
@@ -285,6 +318,7 @@
       const pequeña = window.innerWidth < 760;
       const normales = (pequeña ? 18 : 42) + extra;
       for (let i = 0; i < (pequeña ? 2 : 4); i++) crearFlecha({ gigante: true });
+      crearCartelEspecial();          // primero, para que el resto lo esquive
       for (let i = 0; i < normales; i++) crearFlecha();
       for (let i = 0; i < (pequeña ? 5 : 11); i++) crearCartel();
       contar();
@@ -298,10 +332,7 @@
     });
     boton.addEventListener("mouseenter", () => document.body.classList.add("histeria"));
     boton.addEventListener("mouseleave", () => document.body.classList.remove("histeria"));
-    boton.addEventListener("click", () => {
-      document.body.classList.add("celebracion");
-      contador.textContent = "¡ESO ES! Las flechas están muy orgullosas de ti.";
-    });
+    boton.addEventListener("click", () => document.body.classList.add("celebracion"));
 
     let temporizador;
     window.addEventListener("resize", () => { clearTimeout(temporizador); temporizador = setTimeout(dibujarTodo, 150); });
